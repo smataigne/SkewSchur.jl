@@ -1,0 +1,246 @@
+using LinearAlgebra, SkewLinearAlgebra
+
+#QDWH algroithm for polar decomposition
+#Nakatsukasa, Bai, Gygi, "Optimizing Halley's iteration for computing the matrix polar decomposition", SIAM J. Matrix Anal. Appl., 2010.
+
+function coef(l::Number)
+    d = cbrt(4 * (1 - l * l)/ l^4)
+    c = sqrt(1 + d)
+    return c + 0.5 * sqrt(8 - 4 * d + 8 * (2 - l * l) / (l * l * c))
+end
+
+@views function polarsvd!(X::AbstractMatrix{T}) where T
+    n = size(X, 1)
+    P = zeros(n, n)
+    S = svd!(X)
+    mul!(P, S.U, S.Vt, 1, 0)
+    skewhermitian!(P)
+    return P
+end
+
+@views function polarqr!(X::AbstractMatrix{T}) where T
+    n = size(X, 1)
+    ε = 10 * sqrt(n) * eps(T)
+    α = norm(X)
+    β = eps(T)
+    try
+        #β = 1 / (opnorm(inv(X), 1) * sqrt(n))
+        F = LinearAlgebra.LAPACK.getrf!(copy(X))      # LU factors
+        anorm = opnorm(X, 1)
+        rcond = LinearAlgebra.LAPACK.gecon!('1', F[1], anorm)
+        invnorm1 = 1/(rcond*anorm) 
+        β = 1 / (invnorm1 * sqrt(n)) 
+    catch
+        β = eps(T)
+    end
+    X ./= α
+    l = β / α
+    temp = zeros(2n, n)
+    Q = zeros(2n, n)
+    H = zeros(n, n)
+    e = 1
+    while e > ε
+        a = coef(l)
+        b = (a - 1)^2 / 4
+        c = a + b - 1
+        temp[1:n, 1:n] .= sqrt(c) * X
+        temp[n+1:2n, 1:n] .= I(n)
+        Q .= Matrix(qr(temp).Q)
+        mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
+        (iseven(n) ? skewhermitian!(X) : nothing)
+        l = l * (a + b *l *l)/(1 + c * l * l)
+        mul!(H, X', X, 1, 0)
+        e = norm(H - I(n))
+    end 
+    return X
+end
+
+@views function polarchol!(X::AbstractMatrix{T}) where T
+    n = size(X, 1)
+    ε =  10 * sqrt(n) * eps(T)
+    α = norm(X)
+    β = eps(T)
+    try
+        #β = 1 / (opnorm(inv(X), 1) * sqrt(n))
+        F = LinearAlgebra.LAPACK.getrf!(copy(X))      # LU factors
+        anorm = opnorm(X, 1)
+        rcond = LinearAlgebra.LAPACK.gecon!('1', F[1], anorm)
+        invnorm1 = 1/(rcond*anorm) 
+        β = 1 / (invnorm1 * sqrt(n)) 
+    catch
+        β = eps(T)
+    end
+    X ./= α
+    l = β / α
+    temp = zeros(n, n)
+    H = zeros(n, n)
+    mul!(H, X', X, 1, 0)
+    e = 1
+    while e > ε
+        a = coef(l)
+        b = (a - 1)^2 / 4
+        c = a + b - 1
+        mul!(temp, X, Symmetric(H), 1, 0)
+        X .*= a
+        @. X += b * temp
+        H .*= c
+        H .+= I(n)
+        X = X / Symmetric(H)
+        skewhermitian!(X)
+        l = l * (a + b *l *l)/(1 + c * l * l)
+        mul!(H, X', X, 1, 0)
+        e = norm(Symmetric(H) - I(n))
+    end 
+    return X
+end
+
+@views function polarhybrid!(X::AbstractMatrix{T}) where T
+    n = size(X, 1)
+    ε =  10 * sqrt(n) * eps(T)
+    α = norm(X)
+    β = eps(T)
+    try
+        #β = 1 / (opnorm(inv(X), 1) * sqrt(n))
+        F = LinearAlgebra.LAPACK.getrf!(copy(X))      # LU factors
+        anorm = opnorm(X, 1)
+        rcond = LinearAlgebra.LAPACK.gecon!('1', F[1], anorm)
+        invnorm1 = 1/(rcond*anorm) 
+        β = 1 / (invnorm1 * sqrt(n)) 
+    catch
+        β = eps(T)
+    end
+    X ./= α
+    l = β / α
+    temp = zeros(2n, n)
+    Q = zeros(2n, n)
+    H = zeros(n, n)
+    e = 1
+    a = coef(l)
+    b = (a - 1)^2 / 4
+    c = a + b - 1
+    while c > 1000
+        temp[1:n, 1:n] .= sqrt(c) * X
+        temp[n+1:2n, 1:n] .= I(n)
+        Q .= Matrix(qr(temp).Q)
+        mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
+        skewhermitian!(X)
+        l = l * (a + b *l *l)/(1 + c * l * l)
+        mul!(H, X', X, 1, 0)
+        e = norm(H - I(n))
+        a = coef(l)
+        b = (a - 1)^2 / 4
+        c = a + b - 1
+    end
+    temp = zeros(n, n)
+    mul!(H, X', X, 1, 0)
+    while e > ε
+        mul!(temp, X, Symmetric(H), 1, 0)
+        X .*= a
+        @. X += b * temp
+        H .*= c
+        H .+= I(n)
+        X = X / Symmetric(H)
+        skewhermitian!(X)
+        l = l * (a + b *l *l)/(1 + c * l * l)
+        mul!(H, X', X, 1, 0)
+        e = norm(Symmetric(H) - I(n))
+        a = coef(l)
+        b = (a - 1)^2 / 4
+        c = a + b - 1
+    end 
+    return X
+end
+
+#Halley's iteration for polar decomposition
+@views function polarhalley!(X::AbstractMatrix{T}) where T
+    n = size(X, 1)
+    ε = n * eps(T)
+    X ./= norm(X)
+    e = 1
+    H = zeros(n, n)
+    mul!(H, X', X)
+    temp = zeros(n, n)
+    while e > ε
+        mul!(temp, X, Symmetric(H), 1, 0)
+        X .*= 3
+        X .+= temp
+        H .*= 3
+        H .+= I(n)
+        X = X / Symmetric(H)
+        skewhermitian!(X)
+        mul!(H, X', X, 1, 0)
+        e = norm(H - I(n))
+    end
+    return X   
+end
+
+@views function polarnewtonschulz2!(X::AbstractMatrix{T}) where T
+    n = size(X, 1)
+    ε = n * eps(T)
+    X ./= norm(X)
+    e = 1
+    H = zeros(n, n)
+    mul!(H, X', X)
+    temp = zeros(n, n)
+    iter = 0; itermax = 5 * sqrt(n)
+    while e > ε && iter < itermax
+        iter += 1
+        mul!(temp, X, Symmetric(H), 1/2, 0)
+        X .*= 3/2        
+        X .-= temp
+        skewhermitian!(X)
+        mul!(H, X', X, 1, 0)
+        e = norm(H - I(n))
+    end
+    if iter == itermax
+        @warn "Newton-Schulz iteration did not converge in $itermax iterations"
+    end
+    return X   
+end
+@views function polarnewtonschulz!(X::AbstractMatrix{T}) where T
+    n = size(X, 1)
+    ε = 10 * sqrt(n) * eps(T)
+    α = norm(X)
+    β = eps(T)
+    try
+        F = LinearAlgebra.LAPACK.getrf!(copy(X))      # LU factors
+        anorm = opnorm(X, 1)
+        rcond = LinearAlgebra.LAPACK.gecon!('1', F[1], anorm)
+        invnorm1 = 1/(rcond*anorm) 
+        β = 1 / (invnorm1 * sqrt(n)) 
+    catch
+        β = eps(T)
+    end
+    X ./= α
+    l = β / α
+    temp = zeros(2n, n)
+    Q = zeros(2n, n)
+    H = zeros(n, n)
+    a = coef(l)
+    b = (a - 1)^2 / 4
+    c = a + b - 1
+    temp[1:n, 1:n] .= sqrt(c) * X
+    temp[n+1:2n, 1:n] .= I(n)
+    Q .= Matrix(qr(temp).Q)
+    mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
+    skewhermitian!(X)
+    l = l * (a + b *l *l)/(1 + c * l * l)
+    mul!(H, X', X, 1, 0)
+    e = norm(H - I(n))
+    temp = zeros(n, n)
+    iter = 0; itermax = 5 * sqrt(n)
+    while e > ε && iter < itermax
+        iter += 1
+        mul!(temp, X, Symmetric(H), 1/2, 0)
+        X .*= 3/2        
+        X .-= temp
+        skewhermitian!(X)
+        mul!(H, X', X, 1, 0)
+        e = norm(H - I(n))
+    end
+    if iter == itermax
+        @warn "Newton-Schulz iteration did not converge in $itermax iterations"
+    end
+    return X
+end
+
