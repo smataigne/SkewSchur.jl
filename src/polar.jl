@@ -1,8 +1,5 @@
 using LinearAlgebra, SkewLinearAlgebra
 
-#QDWH algroithm for polar decomposition
-#Nakatsukasa, Bai, Gygi, "Optimizing Halley's iteration for computing the matrix polar decomposition", SIAM J. Matrix Anal. Appl., 2010.
-
 function coef(l::Number)
     d = cbrt(4 * (1 - l * l)/ l^4)
     c = sqrt(1 + d)
@@ -18,6 +15,18 @@ end
     return P
 end
 
+#QDWH algroithm for polar decomposition
+#Nakatsukasa, Bai, Gygi, "Optimizing Halley's iteration for computing the matrix polar decomposition", SIAM J. Matrix Anal. Appl., 2010.
+#Please Copilot Write Documentation for all functions in this file
+
+"""
+    polarqr!(X::AbstractMatrix{T}) where T
+Compute the polar decomposition of a skew-symmetric matrix `X` using the QR-based Halley method of Nakatsukasa, Bai, Gygi, "Optimizing Halley's iteration for computing the matrix polar decomposition", SIAM J. Matrix Anal. Appl., 2010.
+
+Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where `H` is a positive semi-definite Hermitian matrix.
+
+The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
+"""
 @views function polarqr!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
     ε = 10 * sqrt(n) * eps(T)
@@ -54,7 +63,16 @@ end
     end 
     return X
 end
+"""
+    polarchol!(X::AbstractMatrix{T}) where T
+Compute the polar decomposition of a skew-symmetric matrix `X` using the Cholesky-based Halley method of Nakatsukasa, Bai, Gygi, "Optimizing Halley's iteration for computing the matrix polar decomposition", SIAM J. Matrix Anal. Appl., 2010.
 
+Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where `H` is a positive semi-definite Hermitian matrix.
+
+The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
+
+The method requires that `X`is well-conditioned.
+""" 
 @views function polarchol!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
     ε =  10 * sqrt(n) * eps(T)
@@ -94,6 +112,16 @@ end
     return X
 end
 
+"""
+    polarhybrid!(X::AbstractMatrix{T}) where T
+Compute the polar decomposition of a skew-symmetric matrix `X` using a hybrid method that combines the QR-based and Cholesky-based Halley methods of Nakatsukasa, Bai, Gygi, "Optimizing Halley's iteration for computing the matrix polar decomposition", SIAM J. Matrix Anal. Appl., 2010.
+
+Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where `H` is a positive semi-definite Hermitian matrix.
+
+The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
+
+The method is designed to be more robust than the Cholesky-based method, and can handle matrices that are not well-conditioned.
+"""
 @views function polarhybrid!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
     ε =  10 * sqrt(n) * eps(T)
@@ -152,6 +180,15 @@ end
 end
 
 #Halley's iteration for polar decomposition
+"""
+    polarhalley!(X::AbstractMatrix{T}) where T
+
+Compute the polar decomposition of a skew-symmetric matrix `X` using Halley's iteration.
+
+Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where `H` is a positive semi-definite Hermitian matrix.
+
+The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
+"""
 @views function polarhalley!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
     ε = n * eps(T)
@@ -197,9 +234,21 @@ end
     end
     return X   
 end
+
+"""
+    polarnewtonschulz!(X::AbstractMatrix{T}) where T
+
+Compute the polar decomposition of a skew-symmetric matrix `X` using the Newton-Schulz iteration.
+
+Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where `H` is a positive semi-definite Hermitian matrix.
+
+The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
+"""
 @views function polarnewtonschulz!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
     ε = 10 * sqrt(n) * eps(T)
+
+    #Initial step of QDWH algorithm to get a good initial point for the Newton-Schulz iteration.
     α = norm(X)
     β = eps(T)
     try
@@ -227,6 +276,8 @@ end
     l = l * (a + b *l *l)/(1 + c * l * l)
     mul!(H, X', X, 1, 0)
     e = norm(H - I(n))
+
+    #Newton-Schulz iteration
     temp = zeros(n, n)
     iter = 0; itermax = 5 * sqrt(n)
     while e > ε && iter < itermax

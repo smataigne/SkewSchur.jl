@@ -1,6 +1,5 @@
 using LinearAlgebra, Plots, Distributions, LaTeXStrings
 
-
 T = 50
 N = floor.(Int, exp10.(LinRange(1, 3, 8))) .÷ 2
 lc = zeros(length(N), T)

@@ -1,7 +1,6 @@
 using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings
-include("hamiltoschur.jl")
-include("skew_schur.jl")
-#=
+include("../src/hamiltoschur.jl")
+include("../src/other_schur.jl")
 
 N = floor.(Int, 10 .^ LinRange(log10(10), log10(1000), 10)) .÷ 2
 errors_bad_qr = zeros(length(N))
@@ -97,7 +96,7 @@ errors_bad_schur .= 2 .^errors_bad_schur
 errors_random_schur .= 2 .^errors_random_schur
 errors_nice_schur .= 2 .^errors_nice_schur
 conditionings .= 2 .^conditionings
-=#
+
 P = plot(framestyle=:box, xscale=:log10, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft)
 plot!(P, 2N, errors_random_qr, label="Algorithm 4.1 with QDWH", marker=:circle, linestyle=:solid, color=:blue)

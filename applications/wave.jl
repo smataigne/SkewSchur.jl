@@ -1,5 +1,5 @@
 using LinearAlgebra, SkewLinearAlgebra, Plots
-include("hamiltoschur.jl")
+include("../src/hamiltoschur.jl")
 
 
 function c(x::Number)

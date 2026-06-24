@@ -1,6 +1,6 @@
 using LinearAlgebra, LaTeXStrings, Plots
-include("skew_schur.jl")
-include("hamiltoschur.jl")
+include("..src/other_schur.jl")
+include("..src/hamiltoschur.jl")
 #=
 M =
 [0 0.9 0 0 0 0 0 0 0.1 0 0 0;

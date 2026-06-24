@@ -27,7 +27,7 @@ include("polar.jl")
     return X   
 end
 
-@views function symplectoschur!(X::AbstractMatrix{T}; skew = false,polar = :qr) where T
+@views function symplectoschur!(X::AbstractMatrix{T}; skew = true, polar = :qr) where T
     n  = size(X, 1) ÷ 2
     Q = zeros(2n, 2n)
     U1 = zeros(T, n, n)

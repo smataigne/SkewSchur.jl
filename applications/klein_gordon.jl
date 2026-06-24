@@ -1,5 +1,5 @@
 using LinearAlgebra, SkewLinearAlgebra, Plots
-
+include("../src/hamiltoschur.jl")
 
 function c(x::Number)
     return 5 * (2 + 0*cos(π * x))

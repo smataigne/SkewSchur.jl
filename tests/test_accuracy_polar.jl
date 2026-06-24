@@ -1,5 +1,5 @@
 using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings, SkewLinearAlgebra
-include("polar.jl")
+include("../src/polar.jl")
 
 BLAS.set_num_threads(4)
 

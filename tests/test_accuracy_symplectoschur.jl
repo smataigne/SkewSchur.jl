@@ -1,5 +1,6 @@
 using LinearAlgebra, Plots, LaTeXStrings
-#=
+include("../src/symplectoschur.jl")
+
 BLAS.set_num_threads(4)
 N = floor.(Int, 10 .^ LinRange(log10(100), log10(1000), 5)) .÷ 2
 accuracy_schur = zeros(length(N))
@@ -24,7 +25,7 @@ end
 accuracy_schur .= 2 .^ accuracy_schur
 accuracy_symplectoschur_sign .= 2 .^ accuracy_symplectoschur_sign
 accuracy_symplectoschur_skew .= 2 .^ accuracy_symplectoschur_skew
-=#
+
 P = plot(framestyle=:box, xscale=:log10, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft)
 plot!(P, 2N, accuracy_symplectoschur_sign, label="Algorithm 6.1 with " *L" -i\mathrm{sign}(iX)", marker=:diamond, linestyle=:solid, color=:green)

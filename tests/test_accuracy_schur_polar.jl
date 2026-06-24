@@ -1,5 +1,5 @@
 using LinearAlgebra, Plots, LaTeXStrings
-include("polar.jl")
+include("../src/polar.jl")
 
 @views function classical_gramschmidt!(A::AbstractMatrix)
     n = size(A, 2)

@@ -1,15 +1,10 @@
 using LinearAlgebra, SkewLinearAlgebra, Plots
-include("polar.jl")
+include("../src/polar.jl")
 
 """
-    hamiltoschur!(A::AbstractMatrix{T}; random = true, polar = :qr) where T
-Compute the real Schur decomposition of a real skew-symmetric matrix `A` of size `2n x 2n` using a skew-symmetric Hamiltonian structure.
+    time_hamiltoschur!(A::AbstractMatrix{T}, polar = :qr) where T
 
-Returns an orthogonal matrix `Q` and a diagonal matrix `Σ` such that `A = Q * [0 -Σ; Σ 0] * Q'`.
-
-If `random` is true, a random matrix is used to initialize the computation.
-
-If `polar` is `:qr`, `:chol`, or `:svd`, the polar decomposition is computed using the QR-based, Cholesky-based, or SVD-based method, respectively.
+Time the Schur decomposition of a skew-symmetric matrix `A` using the polar decomposition method specified by `polar`.
 """
 @views function time_hamiltoschur!(A::AbstractMatrix{T}, polar = :qr) where T
     n  = size(A, 1) ÷ 2
