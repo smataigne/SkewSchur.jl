@@ -58,7 +58,7 @@ E .*= norm(A) * eps(Float64) / norm(E)
 A .+= E
 B = copy(A)
 BLAS.set_num_threads(4)
-Q, v = hamiltoschur!(copy(A); polar =:qr)
+Q, Σ = hamiltoschur!(copy(A); polar =:qr)
 #tt = minimum(@elapsed hamiltoschur!(copy(A); polar =:qr) for i in 1:5)
 #display(tt)
 #display(norm(A * Q[:, 1:2n2] - Q[:, 1:2n2] * [zeros(n2, n2) -Σ; Σ zeros(n2,n2)]) / norm(A))
@@ -67,7 +67,6 @@ Q, v = hamiltoschur!(copy(A); polar =:qr)
 
 
 mul!(qtwi, Q', wi, 1, 0)
-Σ = Diagonal(v)
 S = [cos(Σ) -sin(Σ); sin(Σ) cos(Σ)]
 mul!(temp, S, qtwi, 1, 0)
 mul!(wf, Q, temp, 1, 0)
@@ -87,8 +86,8 @@ CN = (I - dt/2 * B) \ (I + dt/2 * B) #Crank-Nicolson matrix
 for (i, t) ∈ enumerate([0, tf/3, 2tf/3, tf])
     global PS, temp, wf, qtwi, B, w_euler, dt
     #Spectral integration
-    Σ = t * Diagonal(v)
-    S = [cos(Σ) -sin(Σ); sin(Σ) cos(Σ)]
+    Σ2 = t * Σ
+    S = [cos(Σ2) -sin(Σ2); sin(Σ2) cos(Σ2)]
     mul!(temp, S, qtwi, 1, 0)
     mul!(wf, Q, temp, 1, 0)
     
@@ -150,24 +149,6 @@ P = plot(
     titlefontsize   = 15,
     margin = 5Plots.mm
 )
-savefig(P, joinpath(@__DIR__, "../figures/transport_times.pdf"))
+#savefig(P, joinpath(@__DIR__, "../figures/transport_times.pdf"))
 display(P)
-
-
-#Animation
-#=
-P = plot(framestyle=:box, fontfamily = "Computer Modern", tickfontsize = 12)
-#plot!(x, ui, label = "Initial condition")
-anim = @animate for t ∈ 0:0.01:1
-    Σ = t * Diagonal(v)
-    S = [cos(Σ) -sin(Σ); sin(Σ) cos(Σ)]
-    mul!(temp, S, qtwi, 1, 0)
-    mul!(wf, Q, temp, 1, 0)
-    plot(P, x, wf .^2, label = false)
-    ylims!(-0.5, 2)
-end
-script_dir = @__DIR__
-path = joinpath(script_dir, "../figures/transport.gif")
-gif(anim, path, fps = 24)
-=#
 

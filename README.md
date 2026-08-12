@@ -9,7 +9,7 @@ The repository is organized as a set of Julia source files and scripts rather th
 - `src/hamiltoschur.jl` implements `hamiltoschur` and `hamiltoschur!` for real skew-symmetric matrices.
 - `src/polar.jl` contains the polar-decomposition routines used by the main algorithms: `polarqr!`, `polarchol!`, `polarhybrid!`, `polarhalley!`, `polarnewtonschulz!`, and `polarsvd!`.
 - `src/other_schur.jl` provides alternative skew-symmetric Schur-related routines such as `householder_schur`, `hermitian_eigen`, and `randdiag`.
-- `src/symplectoschur.jl` implements `symplectoschur` and `symplectoschur!` for real matrices.
+- `src/symplectoschur.jl` implements `symplectoschur` and `symplectoschur!` for special orthogonal matrices.
 - `tests/` contains accuracy and timing scripts used to reproduce the figures and comparisons in the project.
 - `applications/` contains example scripts and exploratory experiments.
 
@@ -26,7 +26,7 @@ include("src/hamiltoschur.jl")
 A = randn(8, 8)
 A = (A - A') / 2
 
-Q, vals = hamiltoschur(copy(A); polar = :hybrid)
+Q, Σ = hamiltoschur(copy(A); polar = :hybrid)
 ```
 
 For a real matrix Schur decomposition with the symplectic-style formulation:
@@ -34,7 +34,10 @@ For a real matrix Schur decomposition with the symplectic-style formulation:
 ```julia
 include("src/symplectoschur.jl")
 
-X = randn(8, 8)
+X = Matrix(qr(randn(8, 8).Q))
+if det(X) < 0
+    X[:, end] .*= -1
+end
 Q, C, S = symplectoschur(copy(X); skew = true, polar = :hybrid)
 ```
 
@@ -47,7 +50,7 @@ The scripts use Julia standard libraries plus packages such as `SkewLinearAlgebr
 - `tests/test_accuracy_hamiltoschur.jl` compares accuracy against other Schur-based methods.
 - `tests/test_time_hamiltoschur.jl` measures timing for the main skew-symmetric Schur routines.
 - `tests/test_accuracy_polar.jl` compares the polar-decomposition variants.
-- `tests/test_accuracy_symplectoschur.jl` and `tests/test_time_symplectoschur.jl` benchmark the symplectic Schur workflow.
+- `tests/test_accuracy_symplectoschur.jl` and `tests/test_time_symplectoschur.jl` benchmark the Schur routine for special orthogonal matrices.
 
 The scripts in `applications/` show how the routines are used on concrete examples, including graph and matrix-structure experiments.
 
@@ -58,7 +61,7 @@ src/           Core algorithm implementations
 tests/         Accuracy and timing scripts
 applications/  Example workflows and exploratory scripts
 figures/       Output location for generated plots
-divers - bin/  Additional experiments and scratch scripts
+divers - bin/  Scratch scripts
 ```
 
 ## Notes

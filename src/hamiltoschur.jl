@@ -76,7 +76,7 @@ If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is co
     for k ∈ 1:n
         Q[:, n + k] .*= sign(E.values[k])
     end
-    return Q, abs.(E.values)
+    return Q, Diagonal(abs.(E.values))
 end
 
 """
