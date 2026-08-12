@@ -1,35 +1,26 @@
-using LinearAlgebra, Plots, Distributions, LaTeXStrings
+using LinearAlgebra, Plots, Distributions, LaTeXStrings, SkewLinearAlgebra
 
-T = 50
-N = floor.(Int, exp10.(LinRange(1, 3, 8))) .÷ 2
+T = 10
+N = floor.(Int, exp2.(LinRange(log2(16), log2(4096), 7))) .÷ 2
 lc = zeros(length(N), T)
 lc2 = zeros(length(N), T)
 for (i, n) ∈ enumerate(N)
     Q = qr(randn(2n, 2n)).Q
-    J = [zeros(n, n) -Diagonal(1:n); Diagonal(1:n) zeros(n, n)]
+    J = [zeros(n, n) -I(n); I(n) zeros(n, n)]
     P = Q * J * Q'
+    v = abs.(randn(n))
+    A = Q * [zeros(n, n) -Diagonal(v); Diagonal(v) zeros(n, n)] * Q'
     for t ∈ 1:T
         V = randn(2n, n)
         lc[i, t] = cond(V)
-        lc2[i, t] = cond(complex.(P * V, V))
+        lc2[i, t] = cond((P+1im*I(2n)) * V)
     end
 end
-
 P = plot(framestyle=:box, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
-legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft)
-plot!(2N, mean(lc, dims=2)[:], xaxis = :log10, marker=:o, label = L"\kappa(V)", color=:blue)
-plot!(2N, mean(lc2, dims=2)[:], xaxis = :log10, label = L"\kappa((P+iI)V)", color=:green, linestyle=:dash, marker=:diamond)
-lower = mean(lc, dims=2)[:].-2*std(lc, dims=2)[:]
-upper = mean(lc, dims=2)[:].+2*std(lc, dims=2)[:]
-lower2 = mean(lc2, dims=2)[:].-2*std(lc2, dims=2)[:]
-upper2 = mean(lc2, dims=2)[:].+2*std(lc2, dims=2)[:]
-plot!(2N, lower, fillrange=upper, fillalpha=0.25,
-      label=false, linecolor=:transparent, color=:lightblue)
-plot!(2N, lower2, fillrange=upper2, fillalpha=0.25,
-      label=false, linecolor=:transparent, color=:lightgreen)
-plot!(2N, ones(size(2N)) .* (2+sqrt(2))/(2 - sqrt(2)), label=L"(2+\sqrt{2})/(2 - \sqrt{2})", marker=false, linestyle=:dashdot, color=:black)
+legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, yaxis=:log10, xticks = [16, 64, 256, 1024, 4096])
+plot!(2N, mean(lc, dims=2)[:], xaxis = :log2, marker=:o, label = L"\kappa_2(V)", color=:blue)
+plot!(2N, mean(lc2, dims=2)[:], xaxis = :log2, label = L"\kappa_2((P+iI)V)", color=:green, linestyle=:dash, marker=:diamond)
 xlabel!("Matrix size " * L"2n")
 ylabel!("Condition number")
-ylims!(3, 15)
 display(P)
-savefig(P, joinpath(@__DIR__, "./figures/conditioning_randn.pdf"))
+#savefig(P, joinpath(@__DIR__, "../figures/conditioning_randn.pdf"))

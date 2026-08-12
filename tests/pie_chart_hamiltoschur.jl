@@ -59,14 +59,14 @@ Time the Schur decomposition of a skew-symmetric matrix `A` using the polar deco
 end
 BLAS.set_num_threads(4)
 
-tqr = zeros(4)
+tchol = zeros(4)
 tsvd = zeros(4)
 thybrid = zeros(4)
-Ntrials = 5
+Ntrials = 10
 for i in 1:Ntrials
-    A=  randn(1000, 1000)
+    A=  randn(2000, 2000)
     A = A - A'
-    tqr .+= time_hamiltoschur!(copy(A), :qr) / Ntrials
+    tchol .+= time_hamiltoschur!(copy(A), :chol) / Ntrials
     tsvd .+= time_hamiltoschur!(copy(A), :svd) / Ntrials
     thybrid .+= time_hamiltoschur!(copy(A), :hybrid) / Ntrials
 end
@@ -75,8 +75,8 @@ end
 labels = ["Polar factor", "QR factorization", "Matrix multiplications", "Hermitian EVD"]
 
 # Créer les pie charts sans légende
-P1 = pie(labels, tqr,    legend = false, title = "Algorithm 4.1 with QDWH")
-P2 = pie(labels, thybrid, legend = false, title = "Algorithm 4.1 with Q-CDWH")
+P1 = pie(labels, thybrid, legend = false, title = "Algorithm 4.1 with QDWH")
+P2 = pie(labels, tchol,    legend = false, title = "Algorithm 4.1 with CDWH")
 P3 = pie(labels, tsvd,   legend = false, title = "Algorithm 4.1 with PSVD")
 
 # Créer un plot fantôme (invisible) qui porte uniquement la légende
@@ -111,5 +111,5 @@ P = plot(
 )
 
 display(P)
-#savefig(P, joinpath(@__DIR__, "./figures/hamiltoschur_time_pie.pdf"))
+savefig(P, joinpath(@__DIR__, "../figures/hamiltoschur_time_pie.pdf"))
 println("done")

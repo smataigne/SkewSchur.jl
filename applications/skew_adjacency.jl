@@ -1,6 +1,6 @@
 using LinearAlgebra, LaTeXStrings, Plots
-include("..src/other_schur.jl")
-include("..src/hamiltoschur.jl")
+include("../src/other_schur.jl")
+include("../src/hamiltoschur.jl")
 #=
 M =
 [0 0.9 0 0 0 0 0 0 0.1 0 0 0;
@@ -65,7 +65,7 @@ for k ∈ 13:28
     M[k, mod(k - 12, 16) + 13] = 1
 end
 
-α = 0.9999;  β = 1 - α
+α = 0.75;  β = 1 - α
 #Connect inner cycle with medium cycle
 M[2, 3] = α; M[2, 7] = β
 M[4, 1] = α; M[4, 11] = β
@@ -98,11 +98,11 @@ P = plot(framestyle=:box, ticksfontfamily = "Computer Modern", fontfamily = "Com
 legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topright, size = (500,500))
 plot!(1:28, Q1[:, 1].^2 + Q2[:, 1].^2, linestyle=:solid, color=:blue, label=L"q_{1}^2 + q_{n+1}^2", linewidth=3)
 plot!(P, 1:28, Q1[:, 2].^2 + Q2[:, 2].^2, linestyle=:dash, color=:red, label=L"q_{2}^2 + q_{n+2}^2", linewidth=3)
-plot!(P, 1:28, Q1[:, 3].^2 + Q2[:, 3].^2, linestyle=:dot, color=:green, label=L"q_{3}^2 + q_{n+3}^2", linewidth=3)
+plot!(P, 1:28, Q1[:, 5].^2 + Q2[:, 5].^2, linestyle=:dot, color=:green, label=L"q_{5}^2 + q_{n+5}^2", linewidth=3)
 xlabel!(P, "Vertex indices")
 α = round(1 - α, digits=2)
 title!(P, L"\alpha = " * "$(α)")
-savefig(P, joinpath(@__DIR__, "./figures/graph_clustering_alpha_$(α).pdf"))
+savefig(P, joinpath(@__DIR__, "../figures/graph_clustering_alpha_$(α).pdf"))
 #display(P)
 display(heatmap(Q1 .^2 .+ Q2 .^2, ))
 println("Done!")

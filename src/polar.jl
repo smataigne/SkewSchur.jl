@@ -63,6 +63,7 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
     end 
     return X
 end
+
 """
     polarchol!(X::AbstractMatrix{T}) where T
 Compute the polar decomposition of a skew-symmetric matrix `X` using the Cholesky-based Halley method of Nakatsukasa, Bai, Gygi, "Optimizing Halley's iteration for computing the matrix polar decomposition", SIAM J. Matrix Anal. Appl., 2010.
@@ -191,7 +192,7 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
 """
 @views function polarhalley!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
-    ε = n * eps(T)
+    ε = 10 * sqrt(n) * eps(T)
     X ./= norm(X)
     e = 1
     H = zeros(n, n)
@@ -207,30 +208,6 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
         skewhermitian!(X)
         mul!(H, X', X, 1, 0)
         e = norm(H - I(n))
-    end
-    return X   
-end
-
-@views function polarnewtonschulz2!(X::AbstractMatrix{T}) where T
-    n = size(X, 1)
-    ε = n * eps(T)
-    X ./= norm(X)
-    e = 1
-    H = zeros(n, n)
-    mul!(H, X', X)
-    temp = zeros(n, n)
-    iter = 0; itermax = 5 * sqrt(n)
-    while e > ε && iter < itermax
-        iter += 1
-        mul!(temp, X, Symmetric(H), 1/2, 0)
-        X .*= 3/2        
-        X .-= temp
-        skewhermitian!(X)
-        mul!(H, X', X, 1, 0)
-        e = norm(H - I(n))
-    end
-    if iter == itermax
-        @warn "Newton-Schulz iteration did not converge in $itermax iterations"
     end
     return X   
 end

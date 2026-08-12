@@ -37,8 +37,8 @@ function dist_to_symplectic(A::AbstractMatrix{T}) where T
     d = hypot(sqrt(2) * norm(Σ - I), 0.5 * norm(A * J - J * A))
     return d
 end
-#=
-N = floor.(Int, 10 .^ LinRange(log10(10), log10(1000), 10)) .÷ 2
+
+N = [10, 100, 1000] .÷ 2#floor.(Int, 10 .^ LinRange(log10(10), log10(1000), 10)) .÷ 2
 errors_bad_qr = zeros(length(N))
 errors_random_qr = zeros(length(N))
 errors_nice_qr = zeros(length(N))
@@ -53,7 +53,7 @@ errors_random_chol_J = zeros(length(N))
 errors_nice_chol_J = zeros(length(N))
 conditionings_qr = zeros(length(N))
 conditionings_chol = zeros(length(N))
-Ntrials = 5
+Ntrials = 10
 for (i, n) ∈ enumerate(N)
     for trial in 1:Ntrials
         J = [zeros(n, n) -I(n); I(n) zeros(n, n)]
@@ -128,7 +128,6 @@ errors_bad_chol_J .= 2 .^errors_bad_chol_J
 errors_random_chol_J .= 2 .^errors_random_chol_J
 errors_nice_chol_J .= 2 .^errors_nice_chol_J
 
-=#
 P = plot(framestyle=:box, xscale=:log10, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 12, labelfontsize = 15, tickfontsize = 12)
 plot!(P, 2N, errors_bad_qr, label=L"\kappa(A) \approx ε_\mathrm{m}^{-1}", marker=:circle, linestyle=:solid, color=:blue)
@@ -143,8 +142,8 @@ plot!(P, 2N, 2N * eps(Float64), label= L"\mathcal{O}(n \cdot \varepsilon_\mathrm
 xlabel!(P, "Matrix size " * L"2n")
 ylabel!(P, L"\Vert A_\mathcal{H} - \mathrm{skh}(A_\mathcal{H})\ \Vert_\mathrm{F} / \Vert A\ \Vert_\mathrm{F}")
 script_dir = @__DIR__
-path = joinpath(script_dir, "./figures/hamiltonian_form_accuracy_qr.pdf")
-savefig(P, path)
+path = joinpath(script_dir, "../figures/hamiltonian_form_accuracy_qr.pdf")
+#savefig(P, path)
 display(P)
 
 P = plot(framestyle=:box, xscale=:log10, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
@@ -161,6 +160,13 @@ plot!(P, 2N, 2N * eps(Float64) * 3, label= L"\mathcal{O}(n \cdot \varepsilon_\ma
 xlabel!(P, "Matrix size " * L"2n")
 ylabel!(P, L"\Vert A_\mathcal{H} - \mathrm{skh}(A_\mathcal{H})\ \Vert_\mathrm{F} / \Vert A\ \Vert_\mathrm{F}")
 script_dir = @__DIR__
-path = joinpath(script_dir, "./figures/hamiltonian_form_accuracy_chol.pdf")
-savefig(P, path)
+path = joinpath(script_dir, "../figures/hamiltonian_form_accuracy_chol.pdf")
+#savefig(P, path)
 display(P)
+
+println("Errors for random case with QR-based polar decomposition:")
+display(errors_random_chol)
+println("Errors for bad case with QR-based polar decomposition:")
+display(errors_bad_chol)
+println("Errors for nice case with QR-based polar decomposition:")
+display(errors_nice_chol)

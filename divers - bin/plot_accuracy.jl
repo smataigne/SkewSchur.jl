@@ -1,5 +1,5 @@
 using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings
-include("hamiltoschur.jl")
+include("../src/hamiltoschur.jl")
 
 N = floor.(Int, 10 .^ LinRange(log10(10), log10(1000), 10)) .÷ 2
 l_unsafe = zeros(length(N))

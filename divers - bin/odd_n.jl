@@ -79,3 +79,26 @@ Ah = Z' * A * Z
 display(Ah[1:n, 1:n] - Ah[n+1:2n, n+1:2n])
 display(Ah[n+1:2n, 1:n] + Ah[1:n, n+1:2n])
 println("Done!")
+
+#=
+#Improve accuracy of z
+        
+        display(norm(A * z) / norm(A))
+        #Arnoldi MGS
+        nk = 5
+        K = zeros(T, N, nk)
+        K[:, 1] .= z
+        for j in 1:nk-1
+            mul!(K[:, j+1], A, K[:, j], 1, 0)
+            for i ∈ 1:j-1
+                K[:, j+1] .-= dot(K[:, i], K[:, j+1]) .* K[:, i]
+            end
+            K[:, j+1] ./= norm(K[:, j+1])
+        end
+        H2 = K' * A * K
+        r = schur(H2).vectors[:, 1]
+        #display(schur(H2).vectors)
+        z = K * r
+        z ./= norm(z)
+        display(norm(A * z) / norm(A))
+        =#
