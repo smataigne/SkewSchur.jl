@@ -18,6 +18,8 @@ Time the Schur decomposition of a skew-symmetric matrix `A` using the polar deco
             P = polarchol!(copy(A))
         elseif polar == :hybrid
             P = polarhybrid!(copy(A))
+        elseif polar == :newton
+            P = polarnewtonschulz!(copy(A))
         else
             P = polarsvd!(copy(A))
         end
@@ -57,16 +59,16 @@ Time the Schur decomposition of a skew-symmetric matrix `A` using the polar deco
     end
     return [t1, t2, t3+t5, t4]
 end
-BLAS.set_num_threads(4)
+BLAS.set_num_threads(64)
 
 tchol = zeros(4)
 tsvd = zeros(4)
 thybrid = zeros(4)
-Ntrials = 10
+Ntrials = 1
 for i in 1:Ntrials
-    A=  randn(2000, 2000)
+    A=  randn(8000, 8000)
     A = A - A'
-    tchol .+= time_hamiltoschur!(copy(A), :chol) / Ntrials
+    tchol .+= time_hamiltoschur!(copy(A), :newton) / Ntrials
     tsvd .+= time_hamiltoschur!(copy(A), :svd) / Ntrials
     thybrid .+= time_hamiltoschur!(copy(A), :hybrid) / Ntrials
 end

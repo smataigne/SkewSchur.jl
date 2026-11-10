@@ -2,7 +2,7 @@ using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings
 include("../src/hamiltoschur.jl")
 include("../src/other_schur.jl")
 
-BLAS.set_num_threads(6)
+BLAS.set_num_threads(64)
 n = 10
 A = randn(2n, 2n)
 A = (A - A') / 2
@@ -11,7 +11,7 @@ A = (A - A') / 2
 @elapsed hamiltoschur!(copy(A); polar= :svd)
 @elapsed householder_schur(copy(A))
 @elapsed hermitian_eigen(copy(A))
-N = floor.(Int, 2 .^ LinRange(log2(16), log2(256), 3)) .÷ 2
+N = floor.(Int, 2 .^ LinRange(log2(1024), log2(4096), 3)) .÷ 2
 times_hamiltoschur_qr = ones(length(N))
 times_hamiltoschur_svd = ones(length(N))
 times_hamiltoschur_chol = ones(length(N))
@@ -26,7 +26,7 @@ times_hamiltoschur_hybrid .= Inf
 times_householder_schur .= Inf
 times_hermitian_eigen .= Inf
 times_lapack_schur .= Inf
-Ntrials = 10
+Ntrials = 1
 for (i, n) ∈ enumerate(N)
     #=
     for trial in 1:Ntrials
@@ -43,11 +43,11 @@ for (i, n) ∈ enumerate(N)
     =#
     A = randn(2n, 2n)
     A = (A - A') / 2
-    times_hamiltoschur_svd[i] =  @belapsed hamiltoschur!(copy($A); polar= :svd)
-    times_hamiltoschur_hybrid[i] =  @belapsed hamiltoschur!(copy($A); polar= :hybrid)
-    times_householder_schur[i] = @belapsed householder_schur(copy($A))
-    times_hermitian_eigen[i] = @belapsed hermitian_eigen(copy($A))
-    times_lapack_schur[i] =  @belapsed schur(copy($A))
+    times_hamiltoschur_svd[i] =  @elapsed hamiltoschur!(copy(A); polar= :svd)
+    times_hamiltoschur_hybrid[i] =  @elapsed hamiltoschur!(copy(A); polar= :hybrid)
+    times_householder_schur[i] = @elapsed householder_schur(copy(A))
+    times_hermitian_eigen[i] = @elapsed hermitian_eigen(copy(A))
+    times_lapack_schur[i] =  @elapsed schur(copy(A))
     println("Done with n = $n")
 end
 
@@ -67,7 +67,9 @@ ylabel!(P, "Time (s)")
 
 script_dir = @__DIR__
 path = joinpath(script_dir, "../figures/hamiltoschur_time_2.pdf")
-#savefig(P, path)
+pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2.png")
+savefig(P, path)
+savefig(P, pathpng)
 display(P)
 
 P = plot(framestyle=:box, xscale=:log2, xticks = [16, 64, 256, 1024, 4096], ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
@@ -85,7 +87,9 @@ ylabel!(P, "Relative time")
 ylims!(0.5, 12.5)
 script_dir = @__DIR__
 path = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative.pdf")
-#savefig(P, path)
+pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative.png")
+savefig(P, path)
+savefig(P, pathpng)
 display(P)
 
 

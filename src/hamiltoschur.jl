@@ -38,6 +38,8 @@ If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is co
         P = polarchol!(copy(A))
     elseif polar == :hybrid
         P = polarhybrid!(copy(A))
+    elseif polar == :newton
+        P = polarnewtonschulz!(copy(A))
     else
         P = polarsvd!(copy(A))
     end

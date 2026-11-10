@@ -224,7 +224,7 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
 @views function polarnewtonschulz!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
     ε = 10 * sqrt(n) * eps(T)
-
+    H = zeros(n, n)
     #Initial step of QDWH algorithm to get a good initial point for the Newton-Schulz iteration.
     α = norm(X)
     β = eps(T)
@@ -241,7 +241,7 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
     l = β / α
     temp = zeros(2n, n)
     Q = zeros(2n, n)
-    H = zeros(n, n)
+    
     a = coef(l)
     b = (a - 1)^2 / 4
     c = a + b - 1
@@ -251,9 +251,9 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
     mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
     skewhermitian!(X)
     l = l * (a + b *l *l)/(1 + c * l * l)
+    
     mul!(H, X', X, 1, 0)
     e = norm(H - I(n))
-
     #Newton-Schulz iteration
     temp = zeros(n, n)
     iter = 0; itermax = 5 * sqrt(n)

@@ -36,61 +36,20 @@ end
     return A
 end
 
-@views function getZ(P::AbstractMatrix{T}, A::AbstractMatrix{T}; method =:qr) where T
+@views function getZ(P::AbstractMatrix{T}, A::AbstractMatrix{T}; subspace_iter = 1) where T
     n = size(P, 1) ÷ 2
     V =  randn(2n,n)#randn(Complex{T}, 2n, n)
     temp = zeros(2n, 2n)
     mul!(temp[:, 1:n], P, V, 1, 0)
-    #U = (P + 1im * I(2n)) * V #reduce allocations
-    U = complex.(temp[:, 1:n], V) #reduce allocations
-    #M = Matrix(qr!(U, NoPivot()).Q)
-    #M = modified_gramschmidt!(U)
-    if method == :qr
-        M = Matrix(qr!(U, NoPivot()).Q)
-    elseif method == :gramschmidt
-        M = modified_gramschmidt!(U)
-    elseif method == :polar
-        M = polarhalley2(U)
+    U = Matrix(qr!(complex.(temp[:, 1:n], V), NoPivot()).Q)
+    if  subspace_iter > 1
+        M = Matrix(qr!((P + 1im * I(2n)) * U, NoPivot()).Q)
     else
-        V = zeros(2n, n)
-        V[:, 1] = randn(2n)
-        V[:, 1] ./= norm(V[:, 1])
-        for j ∈ 2:n
-            V[:, j] = A * A * V[:, j-1]
-            for k ∈ 1:j-1
-                V[:, j] .-= (V[:, k]' * V[:, j]) * V[:, k]
-            end
-            V[:, j] ./= norm(V[:, j])
-        end
+        M = U
     end
-    #println("norm(M'M - I) / sqrt(n) = $(norm(M'M - I) / sqrt(n))")
-    #println("Equivalent to : $(norm(2 * real(M)' * real(M) + 2 * imag(M)' * imag(M) + 2im * (real(M)' * imag(M) - imag(M)' * real(M)) - 2I) / sqrt(4n))")
-    #println("See also: $(norm(2 * real(M)' * real(M) + 2 * imag(M)' * imag(M)  - 2I) / sqrt(4n))")
+    
     temp[:, 1:n] .=  √2 *real(M)     #reduce allocations
     temp[:, n+1:2n] .=-√2 * imag(M)
-    #classical_gramschmidt!(temp)
-    #=
-    QR1 = qr(√2 * real(M))       #reduce allocations
-    temp[:, 1:n] .= Matrix(QR1.Q) * Diagonal(diag(QR1.R))      
-    QR2 = qr((I - temp[:, 1:n] * temp[:, 1:n]') * √2 * imag(M))
-    #Orthogonalize G with respect to temp[:, 1:n]
-    temp[:, n+1:2n] .= -Matrix(QR2.Q) * Diagonal(diag(QR2.R)) #-Matrix(qr((I - temp[:, 1:n] * temp[:, 1:n]') * G).Q)
-    =#
-    #=
-    QR1 = qr(√2 * real(M))       #reduce allocations
-    temp[:, 1:n] .= Matrix(QR1.Q) * Diagonal(sign.(diag(QR1.R)))
-    QR2 = qr((I - temp[:, 1:n] * temp[:, 1:n]') * (-√2 * imag(M)))       #reduce allocations
-    temp[:, n+1:2n] .= Matrix(QR2.Q) * Diagonal(sign.(diag(QR2.R))) #-Matrix(qr((I - temp[:, 1:n] * temp[:, 1:n]') * G).Q)
-    =#
-    #temp[:, n+1:2n] .= (-√2 * imag(M) / QR1.R)  *  Diagonal(sign.(diag(QR1.R)))#-Matrix(qr((I - temp[:, 1:n] * temp[:, 1:n]') * G).Q)
-    #temp[:, 1:n] = classical_gramschmidt!(√2 * real(M))        #reduce allocations
-    #temp[:, n+1:2n] = classical_gramschmidt!(-√2 * imag(M))
-    #println("norm(temp' * temp - I) / sqrt(2n) = $(norm(temp' * temp - I) / sqrt(2n))")
-    #display(norm(temp[:, 1:n]' * temp[:, n+1:2n]) / sqrt(n))
-    #display(norm(temp[:, 1:n]' * temp[:, 1:n] - I) / sqrt(n))
-    #display(norm(temp[:, n+1:2n]' * temp[:, n+1:2n] - I) / sqrt(n))
-    #QR = qr(temp)
-    #temp .= Matrix(QR.Q) * Diagonal(sign.(diag(QR.R)))
     return temp
 end
 
@@ -118,12 +77,12 @@ function dist_to_symplectic(A::AbstractMatrix{T}) where T
 end
 
 Ns = floor.(Int, 2 .^ LinRange(log2(16), log2(4096), 5)) .÷ 2
-Ntrials = 5
-errors_getz_qr = zeros(length(Ns))
-errors_getz_gramschmidt = zeros(length(Ns))
-errors_getz_polar = zeros(length(Ns))
+Ntrials = 10
+errors_getz_qr_1 = zeros(length(Ns))
+errors_getz_qr_2 = zeros(length(Ns))
 errors_schur = zeros(length(Ns))
-errors_orthogonality = zeros(length(Ns))
+errors_orthogonality_qr_1 = zeros(length(Ns))
+errors_orthogonality_qr_2 = zeros(length(Ns))
 for (i, n) in enumerate(Ns)
     for trial in 1:Ntrials
         Q = Matrix(qr(randn(2n, 2n)).Q)
@@ -133,23 +92,12 @@ for (i, n) in enumerate(Ns)
         P = Q * J * Q'
         A = Q * S * Q'
         P = (P - P') / 2
-        Zqr = getZ(P, A, method = :qr)
-        #Zgramschmidt = getZ(P, A, method = :gramschmidt)
-        #Zpolar = getZ(P, A, method = :polar)
-        
-        
-        #=
-        M = Q'Z
-        display(norm(M'M - I) / sqrt(n))
-        display(norm(J * M - M * J) / sqrt(n))
-        display(dist_to_symplectic(M)/ sqrt(n))
-        display(norm(P * Z - Z * J) / norm(P))
-        =#
-        errors_getz_qr[i] += log2(norm(P * Zqr - Zqr * J) / norm(P)) / Ntrials
-        #errors_getz_gramschmidt[i] += log2(norm(P * Zgramschmidt - Zgramschmidt * J) / norm(P)) / Ntrials
-        #errors_getz_polar[i] += log2(norm(P * Zpolar - Zpolar * J) / norm(P)) / Ntrials
-        errors_orthogonality[i] += log2(norm(Zqr'Zqr - I) / sqrt(2n)) / Ntrials
-
+        Zqr1 = getZ(P, A; subspace_iter = 1)
+        errors_getz_qr_1[i] += log2(norm(P * Zqr1 - Zqr1 * J) / norm(P)) / Ntrials
+        Zqr2 = getZ(P, A; subspace_iter = 2)
+        errors_getz_qr_2[i] += log2(norm(P * Zqr2 - Zqr2 * J) / norm(P)) / Ntrials
+        errors_orthogonality_qr_1[i] += log2(norm(Zqr1'Zqr1 - I) / sqrt(2n)) / Ntrials
+        errors_orthogonality_qr_2[i] += log2(norm(Zqr2'Zqr2 - I) / sqrt(2n)) / Ntrials
         Schur = schur(P)
         V = Schur.Z[:,[1:2:end; 2:2:end]]
         d = zeros(n)
@@ -161,23 +109,21 @@ for (i, n) in enumerate(Ns)
     end
 end
 
-errors_getz_qr .= 2 .^errors_getz_qr
-#errors_getz_gramschmidt .= 2 .^errors_getz_gramschmidt
-#errors_getz_polar .= 2 .^errors_getz_polar
+errors_getz_qr_1 .= 2 .^errors_getz_qr_1
+errors_getz_qr_2 .= 2 .^errors_getz_qr_2
 errors_schur .= 2 .^errors_schur
-errors_orthogonality .= 2 .^errors_orthogonality
+errors_orthogonality_qr_1 .= 2 .^errors_orthogonality_qr_1
+errors_orthogonality_qr_2 .= 2 .^errors_orthogonality_qr_2
 
 
 P = plot(framestyle=:box, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
-legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, xticks = [16, 64, 256, 1024, 4096])
-plot!(2Ns, errors_getz_qr, label = "RSD with steps 1 to 4", xscale = :log2, yscale = :log10, marker=:circle, color=:red)
-#plot!(2Ns, errors_getz_gramschmidt, label = "RSD with Gram-Schmidt", xscale = :log10, yscale = :log10, marker=:diamond, color=:green)
-#plot!(2Ns, errors_getz_polar, label = "RSD with Polar Decomposition", xscale = :log10, yscale = :log10, marker=:square, color=:blue)
-#plot!(2Ns, errors_orthogonality, label = L"\Vert Z^\top Z - I\ \Vert_\mathrm{F} / \sqrt{2n}", xscale = :log10, yscale = :log10, marker=:diamond, color=:green)
+legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, xticks = [16, 64, 256, 1024, 4096], yticks = [1e-15, 1e-13, 1e-11])
+plot!(2Ns, errors_getz_qr_1, label = "RSD with 1 subspace iteration", xscale = :log2, yscale = :log10, marker=:circle, color=:red)
+plot!(2Ns, errors_getz_qr_2, label = "RSD with 2 subspace iterations", xscale = :log2, yscale = :log10, marker=:diamond, color=:green)
 plot!(2Ns, errors_schur, label = "RSD with " * L"\texttt{schur}\ (\texttt{gees})",  marker=:square, color=:blue)
-#plot!(2Ns, 2Ns .* eps(Float64) .* 3, label = L"\mathcal{O}(\epsilon_\mathrm{m} \cdot n)", linestyle=:dash, color=:black)
 plot!(2Ns, 2Ns .* eps(Float64) .* 2, label = L"\mathcal{O}(\epsilon_\mathrm{m} \cdot n)", linestyle=:dash, color=:black)
 xlabel!("Matrix size " * L"2n")
 ylabel!(L"\Vert PZ - Z J\ \Vert_\mathrm{F} / \sqrt{2n}")
+ylims!(P,  0.3*1e-15, 1e-11)
 display(P)
 savefig(P, joinpath(@__DIR__, "../figures/getZ_accuracy.pdf"))
