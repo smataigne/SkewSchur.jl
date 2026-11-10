@@ -41,10 +41,7 @@ end
     V =  randn(2n,n)#randn(Complex{T}, 2n, n)
     temp = zeros(2n, 2n)
     mul!(temp[:, 1:n], P, V, 1, 0)
-    #U = (P + 1im * I(2n)) * V #reduce allocations
     U = complex.(temp[:, 1:n], V) #reduce allocations
-    #M = Matrix(qr!(U, NoPivot()).Q)
-    #M = modified_gramschmidt!(U)
     if method == :qr
         M = Matrix(qr!(U, NoPivot()).Q)
     elseif method == :gramschmidt
@@ -63,34 +60,8 @@ end
             V[:, j] ./= norm(V[:, j])
         end
     end
-    #println("norm(M'M - I) / sqrt(n) = $(norm(M'M - I) / sqrt(n))")
-    #println("Equivalent to : $(norm(2 * real(M)' * real(M) + 2 * imag(M)' * imag(M) + 2im * (real(M)' * imag(M) - imag(M)' * real(M)) - 2I) / sqrt(4n))")
-    #println("See also: $(norm(2 * real(M)' * real(M) + 2 * imag(M)' * imag(M)  - 2I) / sqrt(4n))")
     temp[:, 1:n] .=  √2 *real(M)     #reduce allocations
     temp[:, n+1:2n] .=-√2 * imag(M)
-    #classical_gramschmidt!(temp)
-    #=
-    QR1 = qr(√2 * real(M))       #reduce allocations
-    temp[:, 1:n] .= Matrix(QR1.Q) * Diagonal(diag(QR1.R))      
-    QR2 = qr((I - temp[:, 1:n] * temp[:, 1:n]') * √2 * imag(M))
-    #Orthogonalize G with respect to temp[:, 1:n]
-    temp[:, n+1:2n] .= -Matrix(QR2.Q) * Diagonal(diag(QR2.R)) #-Matrix(qr((I - temp[:, 1:n] * temp[:, 1:n]') * G).Q)
-    =#
-    #=
-    QR1 = qr(√2 * real(M))       #reduce allocations
-    temp[:, 1:n] .= Matrix(QR1.Q) * Diagonal(sign.(diag(QR1.R)))
-    QR2 = qr((I - temp[:, 1:n] * temp[:, 1:n]') * (-√2 * imag(M)))       #reduce allocations
-    temp[:, n+1:2n] .= Matrix(QR2.Q) * Diagonal(sign.(diag(QR2.R))) #-Matrix(qr((I - temp[:, 1:n] * temp[:, 1:n]') * G).Q)
-    =#
-    #temp[:, n+1:2n] .= (-√2 * imag(M) / QR1.R)  *  Diagonal(sign.(diag(QR1.R)))#-Matrix(qr((I - temp[:, 1:n] * temp[:, 1:n]') * G).Q)
-    #temp[:, 1:n] = classical_gramschmidt!(√2 * real(M))        #reduce allocations
-    #temp[:, n+1:2n] = classical_gramschmidt!(-√2 * imag(M))
-    #println("norm(temp' * temp - I) / sqrt(2n) = $(norm(temp' * temp - I) / sqrt(2n))")
-    #display(norm(temp[:, 1:n]' * temp[:, n+1:2n]) / sqrt(n))
-    #display(norm(temp[:, 1:n]' * temp[:, 1:n] - I) / sqrt(n))
-    #display(norm(temp[:, n+1:2n]' * temp[:, n+1:2n] - I) / sqrt(n))
-    #QR = qr(temp)
-    #temp .= Matrix(QR.Q) * Diagonal(sign.(diag(QR.R)))
     return temp
 end
 
@@ -137,14 +108,6 @@ for (i, n) in enumerate(Ns)
         #Zgramschmidt = getZ(P, A, method = :gramschmidt)
         #Zpolar = getZ(P, A, method = :polar)
         
-        
-        #=
-        M = Q'Z
-        display(norm(M'M - I) / sqrt(n))
-        display(norm(J * M - M * J) / sqrt(n))
-        display(dist_to_symplectic(M)/ sqrt(n))
-        display(norm(P * Z - Z * J) / norm(P))
-        =#
         errors_getz_qr[i] += log2(norm(P * Zqr - Zqr * J) / norm(P)) / Ntrials
         #errors_getz_gramschmidt[i] += log2(norm(P * Zgramschmidt - Zgramschmidt * J) / norm(P)) / Ntrials
         #errors_getz_polar[i] += log2(norm(P * Zpolar - Zpolar * J) / norm(P)) / Ntrials
@@ -173,11 +136,9 @@ legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, xti
 plot!(2Ns, errors_getz_qr, label = "RSD with steps 1 to 4", xscale = :log2, yscale = :log10, marker=:circle, color=:red)
 #plot!(2Ns, errors_getz_gramschmidt, label = "RSD with Gram-Schmidt", xscale = :log10, yscale = :log10, marker=:diamond, color=:green)
 #plot!(2Ns, errors_getz_polar, label = "RSD with Polar Decomposition", xscale = :log10, yscale = :log10, marker=:square, color=:blue)
-#plot!(2Ns, errors_orthogonality, label = L"\Vert Z^\top Z - I\ \Vert_\mathrm{F} / \sqrt{2n}", xscale = :log10, yscale = :log10, marker=:diamond, color=:green)
 plot!(2Ns, errors_schur, label = "RSD with " * L"\texttt{schur}\ (\texttt{gees})",  marker=:square, color=:blue)
-#plot!(2Ns, 2Ns .* eps(Float64) .* 3, label = L"\mathcal{O}(\epsilon_\mathrm{m} \cdot n)", linestyle=:dash, color=:black)
 plot!(2Ns, 2Ns .* eps(Float64) .* 2, label = L"\mathcal{O}(\epsilon_\mathrm{m} \cdot n)", linestyle=:dash, color=:black)
 xlabel!("Matrix size " * L"2n")
 ylabel!(L"\Vert PZ - Z J\ \Vert_\mathrm{F} / \sqrt{2n}")
 display(P)
-savefig(P, joinpath(@__DIR__, "../figures/getZ_accuracy.pdf"))
+#savefig(P, joinpath(@__DIR__, "../figures/getZ_accuracy.pdf"))

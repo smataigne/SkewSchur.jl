@@ -1,6 +1,6 @@
 using LinearAlgebra, Plots, Distributions, LaTeXStrings, SkewLinearAlgebra
 
-T = 10
+T = 2
 N = floor.(Int, exp2.(LinRange(log2(16), log2(4096), 7))) .÷ 2
 lc = zeros(length(N), T)
 lc2 = zeros(length(N), T)
@@ -12,6 +12,7 @@ for (i, n) ∈ enumerate(N)
     A = Q * [zeros(n, n) -Diagonal(v); Diagonal(v) zeros(n, n)] * Q'
     for t ∈ 1:T
         V = randn(2n, n)
+        V2 = randn(ComplexF64, 2n, n)
         lc[i, t] = cond(V)
         lc2[i, t] = cond((P+1im*I(2n)) * V)
     end

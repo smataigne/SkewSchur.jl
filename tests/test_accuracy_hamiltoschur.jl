@@ -24,11 +24,11 @@ for (i, n) ∈ enumerate(N)
         A = V * S * V'
         A = (A - A') / 2
         conditionings[i] += log2(cond(A)) / Ntrials
-        Q, vals = hamiltoschur!(copy(A); polar = :qr)
-        S = [zeros(n, n) -Diagonal(vals); Diagonal(vals) zeros(n, n)]
+        Q, Σ = hamiltoschur!(copy(A); polar = :qr)
+        S = [zeros(n, n) -Σ; Σ zeros(n, n)]
         errors_bad_qr[i] +=  log2(norm(A * Q - Q * S)/ norm(A)) / Ntrials
-        Q, vals = hamiltoschur!(copy(A); polar = :hybrid)
-        S = [zeros(n, n) -Diagonal(vals); Diagonal(vals) zeros(n, n)]
+        Q, Σ = hamiltoschur!(copy(A); polar = :hybrid)
+        S = [zeros(n, n) -Σ; Σ zeros(n, n)]
         errors_bad_chol[i] +=  log2(norm(A * Q - Q * S)/ norm(A)) / Ntrials
         Q, Σ= householder_schur(copy(A))
         S = [zeros(n, n) -Σ; Σ zeros(n, n)]
@@ -41,11 +41,11 @@ for (i, n) ∈ enumerate(N)
         #random case
         A = randn(2n, 2n)
         A = (A - A') / 2
-        Q, vals = hamiltoschur!(copy(A); polar = :qr)
-        S = [zeros(n, n) -Diagonal(vals); Diagonal(vals) zeros(n, n)]
+        Q, Σ = hamiltoschur!(copy(A); polar = :qr)
+        S = [zeros(n, n) -Σ; Σ zeros(n, n)]
         errors_random_qr[i] +=  log2(norm(A * Q - Q * S)/ norm(A)) / Ntrials
-        Q, vals = hamiltoschur!(copy(A); polar = :hybrid)
-        S = [zeros(n, n) -Diagonal(vals); Diagonal(vals) zeros(n, n)]
+        Q, Σ = hamiltoschur!(copy(A); polar = :hybrid)
+        S = [zeros(n, n) -Σ; Σ zeros(n, n)]
         errors_random_chol[i] +=  log2(norm(A * Q - Q * S)/ norm(A)) / Ntrials
         Q, Σ = householder_schur(copy(A))
         S = [zeros(n, n) -Σ; Σ zeros(n, n)]
