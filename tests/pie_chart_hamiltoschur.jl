@@ -59,15 +59,15 @@ Time the Schur decomposition of a skew-symmetric matrix `A` using the polar deco
     end
     return [t1, t2, t3+t5, t4]
 end
-BLAS.set_num_threads(64)
+BLAS.set_num_threads(32)
 
 tchol = zeros(4)
 tsvd = zeros(4)
 thybrid = zeros(4)
-Ntrials = 1
+Ntrials = 2
 for i in 1:Ntrials
-    A=  randn(8000, 8000)
-    A = A - A'
+    A = randn(2048, 2048)
+    A = (A - A')/2
     tchol .+= time_hamiltoschur!(copy(A), :newton) / Ntrials
     tsvd .+= time_hamiltoschur!(copy(A), :svd) / Ntrials
     thybrid .+= time_hamiltoschur!(copy(A), :hybrid) / Ntrials
@@ -115,3 +115,4 @@ P = plot(
 display(P)
 savefig(P, joinpath(@__DIR__, "../figures/hamiltoschur_time_pie.pdf"))
 println("done")
+

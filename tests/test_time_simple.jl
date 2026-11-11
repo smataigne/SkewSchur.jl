@@ -7,7 +7,7 @@ n = 4000
 A = randn(2n, 2n)
 A = (A - A') / 2
 #times_hamiltoschur_svd=  @elapsed hamiltoschur!(copy(A); polar= :svd)
-times_hamiltoschur_hybrid=  @elapsed hamiltoschur!(copy(A); polar= :newton)
+times_hamiltoschur_hybrid=  @elapsed hamiltoschur!(copy(A); polar= :hybrid)
 #times_householder_schur= @elapsed householder_schur(copy(A))
 times_hermitian_eigen= @elapsed hermitian_eigen(copy(A))
 #times_lapack_schur=  @elapsed schur(copy(A))
