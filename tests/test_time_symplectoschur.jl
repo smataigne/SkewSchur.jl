@@ -2,7 +2,7 @@ using LinearAlgebra, Plots, LaTeXStrings
 include("../src/symplectoschur.jl")
 include("../src/other_schur.jl")
 
-BLAS.set_num_threads(32)
+BLAS.set_num_threads(64)
 N = floor.(Int, 2 .^ LinRange(log2(32), log2(8192), 5)) .÷ 2
 
 time_schur = zeros(length(N))
@@ -31,7 +31,7 @@ end
 P = plot(framestyle=:box, xscale=:log2, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, xticks = [32, 128, 512, 2048, 8192])
 #plot!(P, 2N, time_symplectoschur_sign, label="Algorithm 6.1 with " *L" -i\mathrm{sign}(iX)", marker=:diamond, linestyle=:solid, color=:green)
-plot!(P, 2N, time_symplectoschur_skew, label = "Algorithm 6.1 with " *L"\mathrm{skopf}(\mathrm{skew}(X))", marker=:circle, linestyle=:dash, color=:blue)
+plot!(P, 2N, time_symplectoschur_skew, label = "Algorithm 6.1", marker=:circle, linestyle=:dash, color=:blue)
 plot!(P, 2N, time_schur, label="RSD with "*L"\texttt{schur}\ (\texttt{gees})", marker=:utriangle, linestyle=:dot, color=:purple)
 plot!(P, 2N, time_randdiag, label="EVD with " *L"\texttt{RandDiag}", marker=:star5, linestyle=:dashdot, color=:orange)
 plot!(P, 2N[2:end],  0.04 * 1e-8N[2:end].^3 , label=L"\mathcal{O}(n^3)", marker=false, linestyle=:dash, color=:black)

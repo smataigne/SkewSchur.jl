@@ -7,7 +7,7 @@ xticks = floor.(Int, 2 .^ LinRange(log2(1024), log2(16384), 5))
 N = xticks .÷ 2
 
 #Choose type of matrices to test: "random", "bad", "good"
-type = "bad"
+type = "good"
 
 times_hamiltoschur_svd = ones(length(N))
 times_hamiltoschur_newton = ones(length(N))
@@ -21,8 +21,9 @@ times_hamiltoschur_hybrid .= Inf
 times_householder_schur .= Inf
 times_hermitian_eigen .= Inf
 times_lapack_schur .= Inf
+
 Ntrials = 1
-for (i, n) ∈ enumerate(N)
+for (i, n) ∈ enumerate(N[1:1])
     for trial in 1:Ntrials
         if type == "random"
             A = randn(2n, 2n)

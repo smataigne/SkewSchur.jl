@@ -16,7 +16,8 @@ include("polar.jl")
     iter = 30
     temp = zeros(n, n)
     while e > ε && iter > 0
-        mul!(H, X, X, -1, 0)
+        #mul!(H, X, X, -1, 0)
+        BLAS.syrk!('U', 'T', -1.0, X, 0.0, H)
         mul!(temp, X, H, 1, 0)
         X .*= 3
         X .+= temp
@@ -54,6 +55,13 @@ The method returns an orthogonal matrix `Q` and two diagonal matrices `C` and `S
             P = polarchol!(Q)
         elseif polar == :hybrid
             P = polarhybrid!(Q)
+
+        elseif polar == :newton || polar == :newtonsafe
+            if polar == :newtonsafe
+                P = polarnewtonschulz!(Q; safe = true)
+            else
+                P = polarnewtonschulz!(Q)
+            end
         else
             P = polarsvd!(Q)
         end
