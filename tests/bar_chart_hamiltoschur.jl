@@ -1,6 +1,6 @@
-using LinearAlgebra, SkewLinearAlgebra, Plots, PythonPlot
+using DelimitedFiles, LinearAlgebra, SkewLinearAlgebra, Plots, PythonPlot
 include("../src/polar.jl")
-#=
+
 """
     time_hamiltoschur!(A::AbstractMatrix{T}, polar = :qr) where T
 
@@ -65,6 +65,7 @@ tchol = zeros(4)
 tsvd = zeros(4)
 thybrid = zeros(4)
 Ntrials = 2
+
 for i in 1:Ntrials
     A = randn(1000, 1000)
     A = (A - A')/2
@@ -73,13 +74,15 @@ for i in 1:Ntrials
     thybrid .+= time_hamiltoschur!(copy(A), :hybrid) / Ntrials
 end
 
-=#
+
 
 labels = ["Polar factor" "QR factorization" "Matrix multiplications" "Hermitian EVD"]
 
 # Create one stacked bar for each algorithm, with one segment per timing step.
 algorithms = ["QDWH", "CDWH", "PSVD"]
-timings = [thybrid tchol tsvd]
+timings_file = joinpath(@__DIR__, "../figures/hamiltoschur_time_bar.dat")
+writedlm(timings_file, [thybrid tchol tsvd])
+timings = Float64.(readdlm(timings_file))
 hatches = ["", "//", "\\", "xx"]
 colors = ["#B3DDF2", "#C7E9C0", "#FDD0A2", "#DADAEB"]
 pythonplot()
