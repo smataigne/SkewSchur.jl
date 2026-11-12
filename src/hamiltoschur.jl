@@ -40,8 +40,13 @@ If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is co
         P = polarhybrid!(copy(A))
     elseif polar == :newton
         P = polarnewtonschulz!(copy(A))
+    elseif polar == :halley  
+        P = polarhalley!(copy(A))
     else
-        P = polarsvd!(copy(A))
+        #P = polarsvd!(copy(A))
+        S = svd(A)
+        U = complex.(S.U[:, 1:n], -S.V[:, 1:n])
+        M = Matrix(qr(U).Q)
     end
 
     #If the matrix is odd-sized, find the real eigenvector z corresponding to the eigenvalue 0 of A.
@@ -53,10 +58,11 @@ If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is co
         mul!(x[1:n], V', z, 1, 0)
         BLAS.ger!(-1.0, z, x[1:n], V)
     end
-    
-    mul!(temp, P, V, 1, 0)
-    U = complex.(temp[:, 1:n], V)
-    M = Matrix(qr(U).Q)
+    if polar != :svd
+        mul!(temp, P, V, 1, 0)
+        U = complex.(temp[:, 1:n], V)
+        M = Matrix(qr(U).Q)
+    end
     #Use Q as temp
     temp = Q[:, 1:n]
     Mr = real.(M)        #reduce allocations

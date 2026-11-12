@@ -1,6 +1,6 @@
 using LinearAlgebra, SkewLinearAlgebra, Plots, PythonPlot
 include("../src/polar.jl")
-#=
+
 """
     time_hamiltoschur!(A::AbstractMatrix{T}, polar = :qr) where T
 
@@ -73,7 +73,7 @@ for i in 1:Ntrials
     thybrid .+= time_hamiltoschur!(copy(A), :hybrid) / Ntrials
 end
 
-=#
+
 
 labels = ["Polar factor" "QR factorization" "Matrix multiplications" "Hermitian EVD"]
 
