@@ -59,8 +59,8 @@ Time the Schur decomposition of a skew-symmetric matrix `A` using the polar deco
     end
     return [t1, t2, t3+t5, t4]
 end
-BLAS.set_num_threads(4)
-n = 100
+BLAS.set_num_threads(64)
+n = 5000
 tnewton= zeros(4, 3)
 tsvd = zeros(4, 3)
 thybrid = zeros(4, 3)
@@ -99,6 +99,7 @@ timings_bad = [thybrid[:, 3] tnewton[:, 3] tsvd[:, 3]]
 
 timings_file = joinpath(@__DIR__, "../figures/hamiltoschur_time_bar.dat")
 writedlm(timings_file, [timings_random timings_good timings_bad])
+
 labels = ["Polar factor" "QR factorization" "Matrix multiplications" "Hermitian EVD"]
 
 # Create one stacked bar for each algorithm, with one segment per timing step.
@@ -177,3 +178,4 @@ fig.tight_layout(rect = (0, 0.12, 1, 1))
 fig.savefig(joinpath(@__DIR__, "../figures/hamiltoschur_time_bar.pdf"))
 
 println("done")
+
