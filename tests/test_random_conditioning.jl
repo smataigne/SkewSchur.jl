@@ -21,9 +21,9 @@ end
 
 P = plot(framestyle=:box, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, yaxis=:log10, xticks = [16, 64, 256, 1024, 4096])
-plot!(2N, mean(lc, dims=2)[:], xaxis = :log2, marker=:o, label = L"\kappa_2(V)", color=:blue)
-plot!(2N, mean(lc2, dims=2)[:], xaxis = :log2, label = L"\kappa_2((P+\mathrm{i}I)V)", color=:green, linestyle=:dash, marker=:diamond)
-plot!(2N, mean(lc3, dims=2)[:], xaxis = :log2, label = L"\kappa_2((P+\mathrm{i}I)\mathtt{qf}((P + \mathrm{i}I)V))", color=:red, linestyle=:dashdot, marker=:utriangle)
+plot!(2N, mean(lc, dims=2)[:], xaxis = :log2, marker=:o, label = L"\kappa_2(V)", color=:blue, linestyle=:dashdot)
+plot!(2N, mean(lc2, dims=2)[:], xaxis = :log2, label = L"\kappa_2((P+\mathrm{i}I)V)", color=:red, linestyle=:solid, marker=:circle)
+plot!(2N, mean(lc3, dims=2)[:], xaxis = :log2, label = L"\kappa_2((P+\mathrm{i}I)\mathtt{qf}((P + \mathrm{i}I)V))", color=:green, linestyle=:dash, marker=:diamond)
 xlabel!("Matrix size " * L"2n")
 ylabel!("Condition number")
 display(P)

@@ -75,7 +75,7 @@ function dist_to_symplectic(A::AbstractMatrix{T}) where T
     d = hypot(sqrt(2) * norm(Σ - I), 0.5 * norm(A * J - J * A))
     return d
 end
-
+BLAS.set_num_threads(16)
 Ns = floor.(Int, 2 .^ LinRange(log2(16), log2(4096), 5)) .÷ 2
 Ntrials = 10
 errors_getz_qr_1 = zeros(length(Ns))
@@ -118,10 +118,10 @@ errors_orthogonality_qr_2 .= 2 .^errors_orthogonality_qr_2
 
 P = plot(framestyle=:box, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, xticks = [16, 64, 256, 1024, 4096], yticks = [1e-15, 1e-13, 1e-11])
-plot!(2Ns, errors_getz_qr_1, label = "RSD with 1 subspace iteration", xscale = :log2, yscale = :log10, marker=:circle, color=:red)
-plot!(2Ns, errors_getz_qr_2, label = "RSD with 2 subspace iterations", xscale = :log2, yscale = :log10, marker=:diamond, color=:green)
-plot!(2Ns, errors_schur, label = "RSD with " * L"\texttt{schur}\ (\texttt{gees})",  marker=:square, color=:blue)
-plot!(2Ns, 2Ns .* eps(Float64) .* 2, label = L"\mathcal{O}(\epsilon_\mathrm{m} \cdot n)", linestyle=:dash, color=:black)
+plot!(2Ns, errors_getz_qr_1, label = "RSD with 1 subspace iteration", xscale = :log2, yscale = :log10, marker=:circle, color=:red, linestyle=:solid)
+plot!(2Ns, errors_getz_qr_2, label = "RSD with 2 subspace iterations", xscale = :log2, yscale = :log10, marker=:diamond, color=:green, linestyle=:dash)
+plot!(2Ns, errors_schur, label = "RSD with " * L"\texttt{schur}\ (\texttt{gees})",  marker=:square, color=:blue, linestyle=:dashdot)
+plot!(2Ns, 2Ns .* eps(Float64) .* 2, label = L"\mathcal{O}(\epsilon_\mathrm{m} \cdot n)", linestyle=:dot, color=:black)
 xlabel!("Matrix size " * L"2n")
 ylabel!(L"\Vert PZ - Z J\ \Vert_\mathrm{F} / \sqrt{2n}")
 ylims!(P,  0.3*1e-15, 1e-11)
