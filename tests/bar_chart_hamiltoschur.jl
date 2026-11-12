@@ -100,6 +100,7 @@ timings_bad = [thybrid[:, 3] tnewton[:, 3] tsvd[:, 3]]
 timings_file = joinpath(@__DIR__, "../figures/hamiltoschur_time_bar.dat")
 writedlm(timings_file, [timings_random timings_good timings_bad])
 
+timings_file = joinpath(@__DIR__, "../figures/hamiltoschur_time_bar.dat")
 labels = ["Polar factor" "QR factorization" "Matrix multiplications" "Hermitian EVD"]
 
 # Create one stacked bar for each algorithm, with one segment per timing step.
@@ -121,7 +122,7 @@ PythonPlot.matplotlib.rcParams["axes.labelsize"] = 15
 PythonPlot.matplotlib.rcParams["xtick.labelsize"] = 15
 PythonPlot.matplotlib.rcParams["ytick.labelsize"] = 15
 PythonPlot.matplotlib.rcParams["legend.fontsize"] = 15
-fig, subplot_axes = subplots(1, 3, figsize = (15, 4))
+fig, subplot_axes = subplots(1, 3, figsize = (11, 4))
 timings_by_matrix = [timings_random, timings_good, timings_bad]
 titles = [
     "Random Gaussian matrix",
