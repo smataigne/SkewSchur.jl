@@ -222,11 +222,11 @@ Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where 
 
 The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
 """
-@views function polarnewtonschulz!(X::AbstractMatrix{T}; pre_step = false) where T
+@views function polarnewtonschulz!(X::AbstractMatrix{T}; safe = false) where T
     n = size(X, 1)
     ε = 10 * sqrt(n) * eps(T)
     H = zeros(n, n)
-    if pre_step
+    if safe
         #Initial step of QDWH algorithm to get a good initial point for the Newton-Schulz iteration.
         α = norm(X)
         β = eps(T)
