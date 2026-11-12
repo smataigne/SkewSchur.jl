@@ -9,7 +9,7 @@ Returns an orthogonal matrix `Q` and a diagonal matrix `Σ` such that `A = Q * [
 
 If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is computed using the QR-based, Cholesky-based, hybrid or SVD-based method, respectively.
 """
-@views function hamiltoschur!(A::AbstractMatrix{T::TypeVar}; polar = :qr) where T
+@views function hamiltoschur!(A::AbstractMatrix{T::TypeVar}; polar = :qr, subspace = 1) where T
     N = size(A, 1)
     ε = eps(T)
     n = N ÷ 2
@@ -47,10 +47,12 @@ If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is co
     elseif polar == :halley  
         P = polarhalley!(copy(A))
     else
-        #P = polarsvd!(copy(A))
+        P = polarsvd!(copy(A))
+        #=
         S = svd(A)
         U = complex.(S.U[:, 1:n], -S.V[:, 1:n])
         M = Matrix(qr(U).Q)
+        =#
     end
 
     #If the matrix is odd-sized, find the real eigenvector z corresponding to the eigenvalue 0 of A.
@@ -62,10 +64,13 @@ If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is co
         mul!(x[1:n], V', z, 1, 0)
         BLAS.ger!(-1.0, z, x[1:n], V)
     end
-    if polar != :svd
-        mul!(temp, P, V, 1, 0)
-        U = complex.(temp[:, 1:n], V)
-        M = Matrix(qr(U).Q)
+    
+    mul!(temp[:, 1:n], P, V, 1, 0)
+    U = Matrix(qr!(complex.(temp[:, 1:n], V), NoPivot()).Q)
+    if  subspace > 1
+        M = Matrix(qr!((P + 1im * I(2n)) * U, NoPivot()).Q)
+    else
+        M = U
     end
     #Use Q as temp
     temp = Q[:, 1:n]

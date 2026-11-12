@@ -7,7 +7,7 @@ xticks = floor.(Int, 2 .^ LinRange(log2(1024), log2(16384), 5))
 N = xticks .÷ 2
 
 #Choose type of matrices to test: "random", "bad", "good"
-type = "random"
+type = "bad"
 
 times_hamiltoschur_svd = ones(length(N))
 times_hamiltoschur_newton = ones(length(N))
@@ -44,6 +44,8 @@ for (i, n) ∈ enumerate(N)
         times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :hybrid))
         if type == "good"
             times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newton))
+        else
+            times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newtonsafe))
         end
         times_householder_schur[i] = min(times_householder_schur[i], @elapsed householder_schur(copy(A)))
         times_hermitian_eigen[i] = min(times_hermitian_eigen[i], @elapsed hermitian_eigen(copy(A)))
@@ -59,7 +61,6 @@ plot!(P, 2N, times_hamiltoschur_svd, label="Algorithm 4.1 with PSVD", marker=:ci
 plot!(P, 2N, times_hamiltoschur_hybrid, label="Algorithm 4.1 with QDWH", marker=:pentagon, linestyle=:dash, color=:green)
 plot!(P, 2N, times_hamiltoschur_newton, label="Algorithm 4.1 with Newton-Schulz", marker=:square, linestyle=:dashdot, color=:purple)
 plot!(P, 2N, times_householder_schur, label="RSD with tridiagonalization", marker=:dtriangle, linestyle=:dashdotdot, color=:red)
-#plot!(P, 2N, times_lapack_schur, label="RSD with "*L"\texttt{schur}\ (\texttt{gees})", marker=:square, linestyle=:dashdotdot, color=:purple)
 plot!(P, 2N, times_hermitian_eigen, label="EVD of " * L"\mathrm{i}A", marker=:diamond, linestyle=:dot, color=:orange)
 plot!(P, 2N[2:end], 0.03 * 1e-8N[2:end].^3 , label=L"\mathcal{O}(n^3)", marker=false, linestyle=:dot, color=:black)
 xlabel!(P, "Matrix size " * L"2n")
