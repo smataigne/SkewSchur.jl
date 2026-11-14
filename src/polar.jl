@@ -39,8 +39,10 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
         rcond = LinearAlgebra.LAPACK.gecon!('1', F[1], anorm)
         invnorm1 = 1/(rcond*anorm) 
         β = 1 / (invnorm1 * sqrt(n)) 
+        #display("Estimated condition number: $β")
     catch
         β = eps(T)
+        #display("Failed to estimate condition number: $β")
     end
     X ./= α
     l = β / α
@@ -93,7 +95,7 @@ The method requires that `X`is well-conditioned.
     l = β / α
     temp = zeros(n, n)
     H = zeros(n, n)
-    mul!(H, X', X, 1, 0)
+    BLAS.syrk!('U', 'T', 1.0, X, 0.0, H)
     e = 1
     while e > ε
         a = coef(l)
@@ -253,6 +255,8 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
         mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
         skewhermitian!(X)
         l = l * (a + b *l *l)/(1 + c * l * l)
+    else
+        X ./= norm(X)
     end
     BLAS.syrk!('U', 'T', 1.0, X, 0.0, H) #H = X' * X
     e = norm(H - I(n))

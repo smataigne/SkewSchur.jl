@@ -2,12 +2,13 @@ using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings
 include("../src/hamiltoschur.jl")
 include("../src/other_schur.jl")
 
-BLAS.set_num_threads(64)
-xticks = floor.(Int, 2 .^ LinRange(log2(1024), log2(16384), 5))
+nthreads = 128
+BLAS.set_num_threads(nthreads)
+xticks = floor.(Int, 2 .^ LinRange(log2(1024), log2(32768), 6))
 N = xticks .÷ 2
 
 #Choose type of matrices to test: "random", "bad", "good"
-type = "good"
+type = "random"
 
 times_hamiltoschur_svd = ones(length(N))
 times_hamiltoschur_newton = ones(length(N))
@@ -23,7 +24,7 @@ times_hermitian_eigen .= Inf
 times_lapack_schur .= Inf
 
 Ntrials = 1
-for (i, n) ∈ enumerate(N[1:1])
+for (i, n) ∈ enumerate(N)
     for trial in 1:Ntrials
         if type == "random"
             A = randn(2n, 2n)
@@ -42,15 +43,24 @@ for (i, n) ∈ enumerate(N[1:1])
             A = (A - A') / 2
         end
         times_hamiltoschur_svd[i] = min(times_hamiltoschur_svd[i], @elapsed hamiltoschur!(copy(A); polar= :svd))
-        times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :hybrid))
-        if type == "good"
+        println("Done with svd")
+        if 2n < 20000
+            times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :hybrid))
+        println("Done with hybrid")
+        else
+            times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :chol))
+        println("Done with hybrid")
+        end
+        if type == "good" || type == "random"
             times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newton))
+            println("Done with newton")
         else
             times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newtonsafe))
         end
         times_householder_schur[i] = min(times_householder_schur[i], @elapsed householder_schur(copy(A)))
+        println("Done with householder")
         times_hermitian_eigen[i] = min(times_hermitian_eigen[i], @elapsed hermitian_eigen(copy(A)))
-        #times_lapack_schur[i] = min(times_lapack_schur[i], @elapsed schur(copy(A)))
+        println("Done with hermitian")
     end
     println("Done with n = $n")
 end
@@ -63,7 +73,7 @@ plot!(P, 2N, times_hamiltoschur_hybrid, label="Algorithm 4.1 with QDWH", marker=
 plot!(P, 2N, times_hamiltoschur_newton, label="Algorithm 4.1 with Newton-Schulz", marker=:square, linestyle=:dashdot, color=:purple)
 plot!(P, 2N, times_householder_schur, label="RSD with tridiagonalization", marker=:dtriangle, linestyle=:dashdotdot, color=:red)
 plot!(P, 2N, times_hermitian_eigen, label="EVD of " * L"\mathrm{i}A", marker=:diamond, linestyle=:dot, color=:orange)
-plot!(P, 2N[2:end], 0.03 * 1e-8N[2:end].^3 , label=L"\mathcal{O}(n^3)", marker=false, linestyle=:dot, color=:black)
+plot!(P, 2N[2:end], 0.015 * 1e-8N[2:end].^3 , label=L"\mathcal{O}(n^3)", marker=false, linestyle=:dot, color=:black)
 xlabel!(P, "Matrix size " * L"2n")
 ylabel!(P, "Time (s)")
 if type == "random"
@@ -74,21 +84,19 @@ elseif type == "good"
     title!(P, "Random well-conditioned matrices")
 end
 script_dir = @__DIR__
-path = joinpath(script_dir, "../figures/hamiltoschur_time_2_" * type * ".pdf")
-pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_" * type * ".png")
+path = joinpath(script_dir, "../figures/hamiltoschur_time_2_" * type * "_nthreads_" * string(nthreads) * ".pdf")
+pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_" * type * "_nthreads_" * string(nthreads) * ".png")
 savefig(P, path)
 savefig(P, pathpng)
 display(P)
 
 P = plot(framestyle=:box, xscale=:log2, xticks = xticks, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 11, labelfontsize = 14, tickfontsize = 11, legend=:topleft, yscale=:log2)
-#plot!(P, 2N, times_hamiltoschur_qr, label="Algorithm 4.1 with QDWH", marker=:circle, linestyle=:solid, color=:blue)
 
 plot!(P, 2N, times_hamiltoschur_svd ./ times_householder_schur, label="Algorithm 4.1 with PSVD", marker=:circle, linestyle=:solid, color=:blue)
 plot!(P, 2N, times_hamiltoschur_hybrid./ times_householder_schur, label="Algorithm 4.1 with QDWH", marker=:pentagon, linestyle=:dash, color=:green)
 plot!(P, 2N, times_hamiltoschur_newton ./ times_householder_schur, label="Algorithm 4.1 with Newton-Schulz", marker=:square, linestyle=:dashdot, color=:purple)
 plot!(P, 2N, times_householder_schur ./ times_householder_schur, label="RSD with tridiagonalization", marker=:dtriangle, linestyle=:dashdotdot, color=:red)
-#plot!(P, 2N, times_lapack_schur ./ times_householder_schur, label="RSD with "*L"\texttt{schur} \ (\texttt{gees})", marker=:square, linestyle=:dashdotdot, color=:purple)
 plot!(P, 2N, times_hermitian_eigen ./ times_householder_schur, label="EVD of " * L"\mathrm{i}A", marker=:diamond, linestyle=:dot, color=:orange)
 
 xlabel!(P, "Matrix size " * L"2n")
@@ -102,8 +110,8 @@ elseif type == "good"
     title!(P, "Random well-conditioned matrices")
 end
 script_dir = @__DIR__
-path = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * ".pdf")
-pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * ".png")
+path = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * "_nthreads_" * string(nthreads) * ".pdf")
+pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * "_nthreads_" * string(nthreads) * ".png")
 savefig(P, path)
 savefig(P, pathpng)
 display(P)

@@ -2,6 +2,8 @@ using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings
 include("../src/hamiltoschur.jl")
 include("../src/other_schur.jl")
 
+
+#For accuracy tests, BLAS threads don't matter. 
 BLAS.set_num_threads(16)
 N = floor.(Int, 2 .^ LinRange(log2(16), log2(4096), 6)) .÷ 2
 #Choose type of matrices to test: "random", "bad", "good"
