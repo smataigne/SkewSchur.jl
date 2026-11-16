@@ -63,8 +63,8 @@ Time the Schur decomposition of a skew-symmetric matrix `A` using the polar deco
     end
     return [t1, t2, t3+t5, t4]
 end
-BLAS.set_num_threads(64)
-n = 5000
+BLAS.set_num_threads(32)
+n = 1000
 tnewton= zeros(4, 3)
 tsvd = zeros(4, 3)
 thybrid = zeros(4, 3)
@@ -88,8 +88,8 @@ for (j, type) in enumerate(types)
             A = V * S * V'
             A = (A - A') / 2
         end
-        if type == "good"
-            tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newtonsafe) / Ntrials
+        if type == "good" || type == "random"
+            tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newton) / Ntrials
         else
             tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newtonsafe) / Ntrials
         end
