@@ -14,7 +14,8 @@ wₜ + c * wₓ + 0.5 * cₓ * w = 0
 with c(x) and w(x, t)
 =#
 
-n = 500
+BLAS.set_num_threads(32)
+n = 10
 n2 = n ÷ 2
 L = 5
 
@@ -52,19 +53,15 @@ end
 #Discretize wₜ + 0.5 * (cw)ₓ + 0.5 * c * wₓ = 0.
 A = -0.5 * (D * A + A * D) 
 skewhermitian!(A)
-E = randn(n, n)
-E = E - E'
-E .*= norm(A) * eps(Float64) / norm(E)
-A .+= E
 B = copy(A)
-BLAS.set_num_threads(4)
-Q, Σ = hamiltoschur!(copy(A); polar =:qr)
-#tt = minimum(@elapsed hamiltoschur!(copy(A); polar =:qr) for i in 1:5)
-#display(tt)
-#display(norm(A * Q[:, 1:2n2] - Q[:, 1:2n2] * [zeros(n2, n2) -Σ; Σ zeros(n2,n2)]) / norm(A))
+Q, Σ = hamiltoschur!(copy(A); polar =:hybrid)
+
+tt = minimum(@elapsed hamiltoschur!(copy(A); polar =:hybrid) for _ in 1:1)
+display(tt)
+display(norm(A * Q[:, 1:2n2] - Q[:, 1:2n2] * [zeros(n2, n2) -Σ; Σ zeros(n2,n2)]) / norm(A))
 
 
-
+#=
 
 mul!(qtwi, Q', wi, 1, 0)
 S = [cos(Σ) -sin(Σ); sin(Σ) cos(Σ)]
@@ -152,3 +149,4 @@ P = plot(
 #savefig(P, joinpath(@__DIR__, "../figures/transport_times.pdf"))
 display(P)
 
+=#
