@@ -224,11 +224,11 @@ Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where 
 
 The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
 """
-@views function polarnewtonschulz!(X::AbstractMatrix{T}; safe = false) where T
+@views function polarnewtonschulz!(X::AbstractMatrix{T}; safe = 0) where T
     n = size(X, 1)
     ε = 10 * sqrt(n) * eps(T)
     H = zeros(n, n)
-    if safe
+    if safe > 0
         #Initial step of QDWH algorithm to get a good initial point for the Newton-Schulz iteration.
         α = norm(X)
         β = eps(T)
@@ -243,18 +243,32 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
         end
         X ./= α
         l = β / α
-        temp = zeros(2n, n)
-        Q = zeros(2n, n)
-        
-        a = coef(l)
-        b = (a - 1)^2 / 4
-        c = a + b - 1
-        temp[1:n, 1:n] .= sqrt(c) * X
-        temp[n+1:2n, 1:n] .= I(n)
-        Q .= Matrix(qr(temp).Q)
-        mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
-        skewhermitian!(X)
-        l = l * (a + b *l *l)/(1 + c * l * l)
+        #QDWH step
+        if safe == 1
+            temp = zeros(2n, n)
+            Q = zeros(2n, n)
+            
+            a = coef(l)
+            b = (a - 1)^2 / 4
+            c = a + b - 1
+            temp[1:n, 1:n] .= sqrt(c) * X
+            temp[n+1:2n, 1:n] .= I(n)
+            Q .= Matrix(qr(temp).Q)
+            mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
+            skewhermitian!(X)
+        else #DWH algroithm with Cholesky factorization
+            BLAS.syrk!('U', 'T', 1.0, X, 0.0, H) #H = X' * X
+            temp = zeros(n, n)
+            a = coef(l)
+            b = (a - 1)^2 / 4
+            c = a + b - 1
+            H .*= c
+            H .+= I(n)
+            temp = X / Symmetric(H)
+            X .*= (b/c)
+            X .+= (a - b/c) .* temp
+            skewhermitian!(X)
+        end
     end
     BLAS.syrk!('U', 'T', 1.0, X, 0.0, H) #H = X' * X
     e = norm(H - I(n))

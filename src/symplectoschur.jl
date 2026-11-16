@@ -9,15 +9,14 @@ include("polar.jl")
 """
 @views function signhalley!(X::AbstractMatrix{T}) where T
     n = size(X, 1)
-    ε =  max(10, sqrt(n)) * eps(T)
+    ε =  10 *sqrt(n) * eps(T)
     X ./= norm(X)
     e = 1
     H = zeros(n, n)
     iter = 30
     temp = zeros(n, n)
     while e > ε && iter > 0
-        #mul!(H, X, X, -1, 0)
-        BLAS.syrk!('U', 'T', -1.0, X, 0.0, H)
+        mul!(H, X, X, -1, 0)
         mul!(temp, X, H, 1, 0)
         X .*= 3
         X .+= temp
@@ -26,7 +25,6 @@ include("polar.jl")
         X = X / H
         #X = X * (3I - X*X) * inv(I - 3X*X)
         e = norm(X + X') / (2 * sqrt(n))
-        #display(e)
         iter -= 1
     end
     skewhermitian!(X)
@@ -56,9 +54,9 @@ The method returns an orthogonal matrix `Q` and two diagonal matrices `C` and `S
         elseif polar == :hybrid
             P = polarhybrid!(Q)
 
-        elseif polar == :newton || polar == :newtonsafe
+        elseif polar == :newton || polar == :newtonsafeqr
             if polar == :newtonsafe
-                P = polarnewtonschulz!(Q; safe = true)
+                P = polarnewtonschulz!(Q; safe = 1)
             else
                 P = polarnewtonschulz!(Q)
             end
@@ -72,7 +70,7 @@ The method returns an orthogonal matrix `Q` and two diagonal matrices `C` and `S
     temp = zeros(2n, n)
     mul!(temp, P, V, 1, 0)
     U = complex.(temp[:, 1:n], V)
-    M = Matrix(qr(U).Q)
+    M = Matrix(qr(U, NoPivot()).Q)
     #Use Q as temp
     temp = Q[:, 1:n]
     Mr = real.(M) .* sqrt(2)    #reduce allocations

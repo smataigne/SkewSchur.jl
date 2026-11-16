@@ -18,7 +18,7 @@ A = (A - A') / 2
 A ./= norm(A)
 
 #times_hamiltoschur_svd=  @elapsed hamiltoschur!(copy(A); polar= :svd)
-times_hamiltoschur_hybrid=  @elapsed hamiltoschur!(copy(A); polar= :chol)
+times_hamiltoschur_hybrid=  @elapsed hamiltoschur!(copy(A); polar= :newtonsafechol)
 #times_hamiltoschur_halley=  @elapsed hamiltoschur!(copy(A); polar= :halley)
 #times_householder_schur= @elapsed householder_schur(copy(A))
 #times_hermitian_eigen= @elapsed hermitian_eigen(copy(A))

@@ -91,7 +91,7 @@ for (j, type) in enumerate(types)
         if type == "good"
             tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newton) / Ntrials
         else
-            tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newtonsafe) / Ntrials
+            tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newtonsafeqr) / Ntrials
         end
         tsvd[:, j] .+= time_hamiltoschur!(copy(A), :svd) / Ntrials
         thybrid[:, j] .+= time_hamiltoschur!(copy(A), :hybrid) / Ntrials

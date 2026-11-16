@@ -51,11 +51,17 @@ for (i, n) ∈ enumerate(N)
             times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :chol))
         println("Done with hybrid")
         end
-        if type == "good" || type == "random"
+        if type == "good"
             times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newton))
             println("Done with newton")
         else
-            times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newtonsafe))
+            if 2n < 20000  #Hardware constraints do not allow the use of the QDWH for large matrices, so we use the Cholesky-based method instead.
+                times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newtonsafeqr))
+            println("Done with newtonsafeqr")
+            else
+                times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newtonsafechol))
+            println("Done with newtonsafechol")
+            end
         end
         times_householder_schur[i] = min(times_householder_schur[i], @elapsed householder_schur(copy(A)))
         println("Done with householder")
