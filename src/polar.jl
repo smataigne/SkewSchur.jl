@@ -255,8 +255,6 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
         mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
         skewhermitian!(X)
         l = l * (a + b *l *l)/(1 + c * l * l)
-    else
-        X ./= norm(X)
     end
     BLAS.syrk!('U', 'T', 1.0, X, 0.0, H) #H = X' * X
     e = norm(H - I(n))

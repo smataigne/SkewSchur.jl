@@ -88,7 +88,7 @@ for (j, type) in enumerate(types)
             A = V * S * V'
             A = (A - A') / 2
         end
-        if type == "good" || type == "random"
+        if type == "good"
             tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newton) / Ntrials
         else
             tnewton[:, j] .+= time_hamiltoschur!(copy(A), :newtonsafe) / Ntrials
