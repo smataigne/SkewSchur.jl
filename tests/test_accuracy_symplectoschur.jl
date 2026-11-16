@@ -38,7 +38,7 @@ plot!(P, 2N, accuracy_symplectoschur_skew, label="Algorithm 6.1", marker=:circle
 plot!(P, 2N, accuracy_schur, label="RSD with "*L"\texttt{schur}\ (\texttt{gees})", marker=:utriangle, linestyle=:dot, color=:purple)
 plot!(P, 2N, accuracy_randdiag, label="EVD with " *L"\texttt{RandDiag}", marker=:star5, linestyle=:dashdot, color=:orange)
 plot!(P, 2N[1:end], 10 * sqrt.(2N[1:end]) * eps(Float64) .* ones(length(2N[1:end])), label=L"\mathcal{O}(\epsilon_\mathrm{m}\sqrt{n})", marker=false, linestyle=:dashdot, color=:black)
-plot!(P, 2N[1:end], 3* 2N[1:end].^2 * eps(Float64) .* ones(length(2N[1:end])), label=L"\mathcal{O}(\epsilon_\mathrm{m}n^2)", marker=false, linestyle=:dashdotdot, color=:black)
+plot!(P, 2N[1:end], 0.5* 2N[1:end].^2 * eps(Float64) .* ones(length(2N[1:end])), label=L"\mathcal{O}(\epsilon_\mathrm{m}n^2)", marker=false, linestyle=:dashdotdot, color=:black)
 xlabel!(P, "Matrix size " * L"2n")
 ylabel!(P, L"\Vert XQ - QS\ \Vert_\mathrm{F} / \Vert X\ \Vert_\mathrm{F}")
 ylims!(P,  2 * 1e-15, 5 * 1e-6)
