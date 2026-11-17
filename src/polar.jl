@@ -51,6 +51,7 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
     H = zeros(n, n)
     e = 1
     while e > ε
+        
         a = coef(l)
         b = (a - 1)^2 / 4
         c = a + b - 1
@@ -60,7 +61,7 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
         mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
         (iseven(n) ? skewhermitian!(X) : nothing)
         l = l * (a + b *l *l)/(1 + c * l * l)
-        mul!(H, X', X, 1, 0)
+        BLAS.syrk!('U', 'T', 1.0, X, 0.0, H)
         e = norm(H - I(n))
     end 
     return X
@@ -157,7 +158,6 @@ The method is designed to be more robust than the Cholesky-based method, and can
         skewhermitian!(X)
         l = l * (a + b *l *l)/(1 + c * l * l)
         BLAS.syrk!('U', 'T', 1.0, X, 0.0, H)
-        #mul!(H, X', X, 1, 0)
         e = norm(H - I(n))
         a = coef(l)
         b = (a - 1)^2 / 4
@@ -224,12 +224,13 @@ Returns the orthogonal factor `P` of the polar decomposition `X = P * H`, where 
 
 The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
 """
-@views function polarnewtonschulz!(X::AbstractMatrix{T}; safe = 0) where T
+@views function polarnewtonschulz!(X::AbstractMatrix{T}; safe = 1) where T
     n = size(X, 1)
     ε = 10 * sqrt(n) * eps(T)
     H = zeros(n, n)
+    nsafe = 2
     if safe > 0
-        #Initial step of QDWH algorithm to get a good initial point for the Newton-Schulz iteration.
+        #Initial steps of QDWH algorithm to get a good initial point for the Newton-Schulz iteration.
         α = norm(X)
         β = eps(T)
         try
@@ -247,27 +248,32 @@ The polar factor `P` is skew-symmetric if the dimensions of `X` are even.
         if safe == 1
             temp = zeros(2n, n)
             Q = zeros(2n, n)
-            
-            a = coef(l)
-            b = (a - 1)^2 / 4
-            c = a + b - 1
-            temp[1:n, 1:n] .= sqrt(c) * X
-            temp[n+1:2n, 1:n] .= I(n)
-            Q .= Matrix(qr(temp).Q)
-            mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
-            skewhermitian!(X)
+            for _ in 1:nsafe
+                a = coef(l)
+                b = (a - 1)^2 / 4
+                c = a + b - 1
+                temp[1:n, 1:n] .= sqrt(c) * X
+                temp[n+1:2n, 1:n] .= I(n)
+                Q .= Matrix(qr(temp).Q)
+                mul!(X, Q[1:n, 1:n], Q[n+1:2n, 1:n]', (a - b/c)/sqrt(c), b / c)
+                skewhermitian!(X)
+                l = l * (a + b *l *l)/(1 + c * l * l)
+            end
         else #DWH algroithm with Cholesky factorization
-            BLAS.syrk!('U', 'T', 1.0, X, 0.0, H) #H = X' * X
-            temp = zeros(n, n)
-            a = coef(l)
-            b = (a - 1)^2 / 4
-            c = a + b - 1
-            H .*= c
-            H .+= I(n)
-            temp = X / Symmetric(H)
-            X .*= (b/c)
-            X .+= (a - b/c) .* temp
-            skewhermitian!(X)
+            for _ in 1:nsafe
+                BLAS.syrk!('U', 'T', 1.0, X, 0.0, H) #H = X' * X
+                temp = zeros(n, n)
+                a = coef(l)
+                b = (a - 1)^2 / 4
+                c = a + b - 1
+                H .*= c
+                H .+= I(n)
+                temp = X / Symmetric(H)
+                X .*= (b/c)
+                X .+= (a - b/c) .* temp
+                skewhermitian!(X)
+                l = l * (a + b *l *l)/(1 + c * l * l)
+            end
         end
     end
     BLAS.syrk!('U', 'T', 1.0, X, 0.0, H) #H = X' * X

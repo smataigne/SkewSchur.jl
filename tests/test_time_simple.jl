@@ -2,8 +2,8 @@ using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings
 include("../src/hamiltoschur.jl")
 include("../src/other_schur.jl")
 
-BLAS.set_num_threads(128)
-n = 16000
+BLAS.set_num_threads(32)
+n = 3000
 #=
 Q = Matrix(qr(randn(2n, 2n)).Q)
 D = Diagonal(0.5 .+ rand(n))
@@ -16,9 +16,10 @@ A = Q * S * Q'
 A = randn(2n, 2n)
 A = (A - A') / 2
 A ./= norm(A)
-
+#polarnewtonschulz!(A; safe =2)
+#=
 #times_hamiltoschur_svd=  @elapsed hamiltoschur!(copy(A); polar= :svd)
-times_hamiltoschur_hybrid=  @elapsed hamiltoschur!(copy(A); polar= :newtonsafechol)
+times_hamiltoschur_hybrid=  @elapsed hamiltoschur!(copy(A); polar= :qr, subspace = 2)
 #times_hamiltoschur_halley=  @elapsed hamiltoschur!(copy(A); polar= :halley)
 #times_householder_schur= @elapsed householder_schur(copy(A))
 #times_hermitian_eigen= @elapsed hermitian_eigen(copy(A))
@@ -30,3 +31,4 @@ display("Time for Algorithm 4.1 with PHybrid: $times_hamiltoschur_hybrid")
 #display("Time for Algorithm 4.1 with PHouseholder: $times_householder_schur")
 #display("Time for Algorithm 4.1 with PHermitian: $times_hermitian_eigen")
 #display("Time for Algorithm 4.1 with PLapack: $times_lapack_schur")
+=#

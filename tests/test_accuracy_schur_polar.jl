@@ -1,42 +1,7 @@
 using LinearAlgebra, Plots, LaTeXStrings
 include("../src/polar.jl")
 
-@views function classical_gramschmidt!(A::AbstractMatrix)
-    n = size(A, 2)
-    for j in 1:n
-        for i in 1:(j-1)
-            A[:, j] .-= (A[:, i]' * A[:, j]) * A[:, i]
-        end
-        A[:, j] ./= norm(A[:, j])
-    end
-    return A
-end
-
-@views function modified_gramschmidt!(A::AbstractMatrix)
-    n = size(A, 2)
-    for i in 1:n
-        A[:, i] ./= norm(A[:, i])
-        for j in (i+1):n
-            A[:, j] .-= (A[:, i]' * A[:, j]) * A[:, i]
-        end
-    end
-    return A
-end
-
-@views function polarhalley2(A::AbstractMatrix)
-    n = size(A, 2)
-    A ./= norm(A)
-    iter = 20
-    e = Inf
-    while e > 1e-15 && iter > 0
-        A = A * (3 * I(n) + A'A) / Hermitian(I(n) + 3 * A'A) #Halley
-        iter -= 1
-        e = norm(A'A - I(size(A, 2))) / norm(A)
-    end
-    return A
-end
-
-@views function getZ(P::AbstractMatrix{T}, A::AbstractMatrix{T}; subspace_iter = 1) where T
+@views function getZ(P::AbstractMatrix{T}; subspace_iter = 1) where T
     n = size(P, 1) ÷ 2
     V =  randn(2n,n)#randn(Complex{T}, 2n, n)
     temp = zeros(2n, 2n)
@@ -66,15 +31,7 @@ end
     Ah[1:n, n+1:2n] .= -Ah[n+1:2n, 1:n]
     return norm(Ah - A) / norm(A)
 end
-
-function dist_to_symplectic(A::AbstractMatrix{T}) where T
-    n = size(A, 1) ÷ 2
-    Y = (A[1:n, 1:n] + A[n+1:2n, n+1:2n]) / 2 + 1im * (A[n+1:2n, 1:n] - A[1:n, n+1:2n]) / 2
-    Σ = Diagonal(svdvals(Y))
-    J = [zeros(n, n) -I(n); I(n) zeros(n, n)]
-    d = hypot(sqrt(2) * norm(Σ - I), 0.5 * norm(A * J - J * A))
-    return d
-end
+#=
 BLAS.set_num_threads(16)
 Ns = floor.(Int, 2 .^ LinRange(log2(16), log2(4096), 5)) .÷ 2
 Ntrials = 10
@@ -87,14 +44,11 @@ for (i, n) in enumerate(Ns)
     for trial in 1:Ntrials
         Q = Matrix(qr(randn(2n, 2n)).Q)
         J = [zeros(n, n) -I(n); I(n) zeros(n, n)]
-        v = rand(n)
-        S = [zeros(n, n) -Diagonal(v); Diagonal(v) zeros(n, n)]
         P = Q * J * Q'
-        A = Q * S * Q'
         P = (P - P') / 2
-        Zqr1 = getZ(P, A; subspace_iter = 1)
+        Zqr1 = getZ(P; subspace_iter = 1)
         errors_getz_qr_1[i] += log2(norm(P * Zqr1 - Zqr1 * J) / norm(P)) / Ntrials
-        Zqr2 = getZ(P, A; subspace_iter = 2)
+        Zqr2 = getZ(P; subspace_iter = 2)
         errors_getz_qr_2[i] += log2(norm(P * Zqr2 - Zqr2 * J) / norm(P)) / Ntrials
         errors_orthogonality_qr_1[i] += log2(norm(Zqr1'Zqr1 - I) / sqrt(2n)) / Ntrials
         errors_orthogonality_qr_2[i] += log2(norm(Zqr2'Zqr2 - I) / sqrt(2n)) / Ntrials
@@ -127,3 +81,38 @@ ylabel!(L"\Vert PZ - Z J\ \Vert_\mathrm{F} / \sqrt{2n}")
 ylims!(P,  0.3*1e-15, 1e-11)
 display(P)
 savefig(P, joinpath(@__DIR__, "../figures/getZ_accuracy.pdf"))
+=#
+
+BLAS.set_num_threads(32)
+Ns = [10 100 1000] .÷ 2
+types = ["random", "good", "bad"]  
+Ntrials = 2
+errors = zeros(length(Ns), 3)
+for (j, type) in enumerate(types)
+    for (i, n) in enumerate(Ns)
+        for trial in 1:Ntrials
+            if type == "random"
+                A = randn(2n, 2n)
+                A = (A - A') / 2
+            elseif type == "bad"
+                V = qr(randn(2n, 2n)).Q
+                Σ = exp2.(-LinRange(0, 52, n))
+                S = [zeros(n, n) -Diagonal(Σ); Diagonal(Σ) zeros(n, n)]
+                A = V * S * V'
+                A = (A - A') / 2
+            elseif type == "good"
+                V = qr(randn(2n, 2n)).Q
+                Σ = 0.5 .+ rand(n)
+                S = [zeros(n, n) -Diagonal(Σ); Diagonal(Σ) zeros(n, n)]
+                A = V * S * V'
+                A = (A - A') / 2
+            end
+            P = polarhybrid!(copy(A))
+            Z = getZ(P; subspace_iter = 1)
+            Ah = Z' * A * Z
+            errors[i, j] += log2(dist_to_Hamiltonian(Ah)) / Ntrials
+        end
+    end
+end
+errors .= 2 .^errors
+display(errors)

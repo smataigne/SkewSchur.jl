@@ -69,8 +69,8 @@ If `polar` is `:qr`, `:chol`, `:hybrid` or `:svd`, the polar decomposition is co
     
     mul!(temp[:, 1:n], P, V, 1, 0)
     U = Matrix(qr!(complex.(temp[:, 1:n], V), NoPivot()).Q)
-    if  subspace > 1
-        M = Matrix(qr!((P + 1im * I(2n)) * U, NoPivot()).Q)
+    if subspace > 1 || isodd(N)
+        M = 0.5.*(P * U + 1im .* U)
     else
         M = U
     end

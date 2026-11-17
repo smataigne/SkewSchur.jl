@@ -4,8 +4,8 @@ include("../src/other_schur.jl")
 
 
 #For accuracy tests, BLAS threads don't matter. 
-BLAS.set_num_threads(16)
-N = floor.(Int, 2 .^ LinRange(log2(16), log2(4096), 6)) .÷ 2
+BLAS.set_num_threads(32)
+N = floor.(Int, 2 .^ LinRange(log2(16), log2(2048), 5)) .÷ 2
 #Choose type of matrices to test: "random", "bad", "good"
 type = "bad"
 errors_hybrid_1 = zeros(length(N))
