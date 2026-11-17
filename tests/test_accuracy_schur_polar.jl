@@ -34,7 +34,7 @@ end
 #=
 BLAS.set_num_threads(16)
 Ns = floor.(Int, 2 .^ LinRange(log2(16), log2(4096), 5)) .÷ 2
-Ntrials = 10
+Ntrials = 5
 errors_getz_qr_1 = zeros(length(Ns))
 errors_getz_qr_2 = zeros(length(Ns))
 errors_schur = zeros(length(Ns))
@@ -84,9 +84,9 @@ savefig(P, joinpath(@__DIR__, "../figures/getZ_accuracy.pdf"))
 =#
 
 BLAS.set_num_threads(32)
-Ns = [10 100 1000] .÷ 2
+Ns = [100 1000 10000] .÷ 2
 types = ["random", "good", "bad"]  
-Ntrials = 2
+Ntrials = 5
 errors = zeros(length(Ns), 3)
 for (j, type) in enumerate(types)
     for (i, n) in enumerate(Ns)
@@ -113,6 +113,7 @@ for (j, type) in enumerate(types)
             errors[i, j] += log2(dist_to_Hamiltonian(Ah)) / Ntrials
         end
     end
+    println("Errors for type $type: ", errors[:, j])
 end
 errors .= 2 .^errors
 display(errors)

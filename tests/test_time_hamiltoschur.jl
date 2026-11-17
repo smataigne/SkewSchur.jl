@@ -1,14 +1,14 @@
 using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings
 include("../src/hamiltoschur.jl")
 include("../src/other_schur.jl")
-
+#=
 nthreads = 128
 BLAS.set_num_threads(nthreads)
 xticks = floor.(Int, 2 .^ LinRange(log2(1024), log2(32768), 6))
 N = xticks .÷ 2
 
 #Choose type of matrices to test: "random", "bad", "good"
-type = "random"
+type = "bad"
 
 times_hamiltoschur_svd = ones(length(N))
 times_hamiltoschur_newton = ones(length(N))
@@ -42,8 +42,10 @@ for (i, n) ∈ enumerate(N)
             A = V * S * V'
             A = (A - A') / 2
         end
-        times_hamiltoschur_svd[i] = min(times_hamiltoschur_svd[i], @elapsed hamiltoschur!(copy(A); polar= :svd))
+        if type != "bad" #SVD doesn't work for ill-conditioned matrices, so we skip it for those cases.
+            times_hamiltoschur_svd[i] = min(times_hamiltoschur_svd[i], @elapsed hamiltoschur!(copy(A); polar= :svd))
         println("Done with svd")
+        end
         if 2n < 20000
             times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :hybrid))
         println("Done with hybrid")
@@ -65,21 +67,27 @@ for (i, n) ∈ enumerate(N)
         end
         times_householder_schur[i] = min(times_householder_schur[i], @elapsed householder_schur(copy(A)))
         println("Done with householder")
-        times_hermitian_eigen[i] = min(times_hermitian_eigen[i], @elapsed hermitian_eigen(copy(A)))
+        if type == "bad" && 2n > 4200
+            println("Skipping hermitian eigen for bad matrices of size $(2n)")
+        else
+            times_hermitian_eigen[i] = min(times_hermitian_eigen[i], @elapsed hermitian_eigen(copy(A)))
+        end
         println("Done with hermitian")
     end
     println("Done with n = $n")
 end
-
+=#
 P = plot(framestyle=:box, xscale=:log2, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 11, labelfontsize = 14, tickfontsize = 11, legend=:topleft, xticks = xticks)
-
-plot!(P, 2N, times_hamiltoschur_svd, label="Algorithm 4.1 with PSVD", marker=:circle, linestyle=:solid, color=:blue)
+if type != "bad"
+    plot!(P, 2N, times_hamiltoschur_svd, label="Algorithm 4.1 with PSVD", marker=:circle, linestyle=:solid, color=:blue)
+end
 plot!(P, 2N, times_hamiltoschur_hybrid, label="Algorithm 4.1 with QDWH", marker=:pentagon, linestyle=:dash, color=:green)
 plot!(P, 2N, times_hamiltoschur_newton, label="Algorithm 4.1 with Newton-Schulz", marker=:square, linestyle=:dashdot, color=:purple)
 plot!(P, 2N, times_householder_schur, label="RSD with tridiagonalization", marker=:dtriangle, linestyle=:dashdotdot, color=:red)
 plot!(P, 2N, times_hermitian_eigen, label="EVD of " * L"\mathrm{i}A", marker=:diamond, linestyle=:dot, color=:orange)
 plot!(P, 2N[2:end], 0.015 * 1e-8N[2:end].^3 , label=L"\mathcal{O}(n^3)", marker=false, linestyle=:dot, color=:black)
+ylims!(P, 1e-1, 2*1e4)
 xlabel!(P, "Matrix size " * L"2n")
 ylabel!(P, "Time (s)")
 if type == "random"
@@ -94,12 +102,12 @@ path = joinpath(script_dir, "../figures/hamiltoschur_time_2_" * type * "_nthread
 pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_" * type * "_nthreads_" * string(nthreads) * ".png")
 savefig(P, path)
 savefig(P, pathpng)
-display(P)
 
 P = plot(framestyle=:box, xscale=:log2, xticks = xticks, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
-legendfontsize = 11, labelfontsize = 14, tickfontsize = 11, legend=:topleft, yscale=:log2)
-
-plot!(P, 2N, times_hamiltoschur_svd ./ times_householder_schur, label="Algorithm 4.1 with PSVD", marker=:circle, linestyle=:solid, color=:blue)
+legendfontsize = 11, labelfontsize = 14, tickfontsize = 11, legend=:topright, yscale=:log2)
+if type != "bad"
+    plot!(P, 2N, times_hamiltoschur_svd ./ times_householder_schur, label="Algorithm 4.1 with PSVD", marker=:circle, linestyle=:solid, color=:blue)
+end
 plot!(P, 2N, times_hamiltoschur_hybrid./ times_householder_schur, label="Algorithm 4.1 with QDWH", marker=:pentagon, linestyle=:dash, color=:green)
 plot!(P, 2N, times_hamiltoschur_newton ./ times_householder_schur, label="Algorithm 4.1 with Newton-Schulz", marker=:square, linestyle=:dashdot, color=:purple)
 plot!(P, 2N, times_householder_schur ./ times_householder_schur, label="RSD with tridiagonalization", marker=:dtriangle, linestyle=:dashdotdot, color=:red)
@@ -120,6 +128,5 @@ path = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * 
 pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * "_nthreads_" * string(nthreads) * ".png")
 savefig(P, path)
 savefig(P, pathpng)
-display(P)
 
 
