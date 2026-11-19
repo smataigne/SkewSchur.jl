@@ -8,7 +8,7 @@ xticks = floor.(Int, 2 .^ LinRange(log2(1024), log2(32768), 6))
 N = xticks .÷ 2
 
 #Choose type of matrices to test: "random", "bad", "good"
-type = "bad"
+type = "random"
 
 times_hamiltoschur_svd = ones(length(N))
 times_hamiltoschur_newton = ones(length(N))
@@ -22,9 +22,10 @@ times_hamiltoschur_hybrid .= Inf
 times_householder_schur .= Inf
 times_hermitian_eigen .= Inf
 times_lapack_schur .= Inf
-
-Ntrials = 1
+=#
+Ntrials = 2
 for (i, n) ∈ enumerate(N)
+    if i < 2
     for trial in 1:Ntrials
         if type == "random"
             A = randn(2n, 2n)
@@ -42,16 +43,17 @@ for (i, n) ∈ enumerate(N)
             A = V * S * V'
             A = (A - A') / 2
         end
-        if type != "bad" #SVD doesn't work for ill-conditioned matrices, so we skip it for those cases.
+        if type != "bad"
+            #SVD doesn't work for ill-conditioned matrices, so we skip it for those cases. Memory error for large matrices, so we skip it for those cases as well.
             times_hamiltoschur_svd[i] = min(times_hamiltoschur_svd[i], @elapsed hamiltoschur!(copy(A); polar= :svd))
-        println("Done with svd")
+            println("Done with svd")
         end
         if 2n < 20000
             times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :hybrid))
-        println("Done with hybrid")
+            println("Done with hybrid")
         else
             times_hamiltoschur_hybrid[i] = min(times_hamiltoschur_hybrid[i], @elapsed hamiltoschur!(copy(A); polar= :chol))
-        println("Done with hybrid")
+            println("Done with hybrid")
         end
         if type == "good"
             times_hamiltoschur_newton[i] = min(times_hamiltoschur_newton[i], @elapsed hamiltoschur!(copy(A); polar= :newton))
@@ -76,7 +78,8 @@ for (i, n) ∈ enumerate(N)
     end
     println("Done with n = $n")
 end
-=#
+end
+
 P = plot(framestyle=:box, xscale=:log2, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
 legendfontsize = 11, labelfontsize = 14, tickfontsize = 11, legend=:topleft, xticks = xticks)
 if type != "bad"
@@ -128,5 +131,3 @@ path = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * 
 pathpng = joinpath(script_dir, "../figures/hamiltoschur_time_2_relative_" * type * "_nthreads_" * string(nthreads) * ".png")
 savefig(P, path)
 savefig(P, pathpng)
-
-

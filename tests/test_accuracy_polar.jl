@@ -1,9 +1,9 @@
 using LinearAlgebra, Plots, BenchmarkTools, LaTeXStrings, SkewLinearAlgebra
 include("../src/polar.jl")
 
-BLAS.set_num_threads(4)
+BLAS.set_num_threads(64)
 
-n = 1000
+n = 4000
 Ndata = 4
 
 lpolarchol = zeros(Ndata)
@@ -19,14 +19,14 @@ A1 = (A - A') / 2
 
 #Case 2 : well-conditioned matrix
 V = qr(randn(2n, 2n)).Q
-Σ = 1 .+ rand(n)
+Σ = 0.5 .+ rand(n)
 S = [zeros(n, n) -Diagonal(Σ); Diagonal(Σ) zeros(n, n)]
 A = V * S * V'
 A2 = (A - A') / 2
 
 #Case 3 : ill-conditioned matrix
 V = qr(randn(2n, 2n)).Q
-Σ = exp2.(-LinRange(0, 53, n))
+Σ = exp2.(-LinRange(0, 52, n))
 S = [zeros(n, n) -Diagonal(Σ); Diagonal(Σ) zeros(n, n)]
 A = V * S * V'
 A3 = (A - A') / 2
@@ -64,12 +64,12 @@ for A ∈ [A1,A2,A3]
     H = P'A
     lpolarhybrid[3] = norm(H - H') / (2 * norm(H))
 
-    lpolarsvd[4] = @belapsed polarsvd!(copy($A))
-    lpolarqr[4] = @belapsed polarqr!(copy($A))
-    lpolarchol[4] = @belapsed polarchol!(copy($A))
-    lpolarhybrid[4] = @belapsed polarhybrid!(copy($A))
-    lpolarhalley[4] = @belapsed polarhalley!(copy($A))
-    lpolarnewton[4] = @belapsed polarnewtonschulz!(copy($A))
+    lpolarsvd[4] = @elapsed polarsvd!(copy(A))
+    lpolarqr[4] = @elapsed polarqr!(copy(A))
+    lpolarchol[4] = @elapsed polarchol!(copy(A))
+    lpolarhybrid[4] = @elapsed polarhybrid!(copy(A))
+    lpolarhalley[4] = @elapsed polarhalley!(copy(A))
+    lpolarnewton[4] = @elapsed polarnewtonschulz!(copy(A))
 
     lpolarsvd = round.(lpolarsvd, sigdigits = 2)
     lpolarqr = round.(lpolarqr, sigdigits = 2)
