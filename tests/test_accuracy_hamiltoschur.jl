@@ -4,8 +4,8 @@ include("../src/other_schur.jl")
 
 
 #For accuracy tests, BLAS threads don't matter. 
-BLAS.set_num_threads(32)
-N = floor.(Int, 2 .^ LinRange(log2(16), log2(2048), 5)) .÷ 2
+BLAS.set_num_threads(64)
+N = floor.(Int, 2 .^ LinRange(log2(16), log2(8192), 10)) .÷ 2
 #Choose type of matrices to test: "random", "bad", "good"
 type = "bad"
 errors_hybrid_1 = zeros(length(N))
@@ -13,7 +13,7 @@ errors_hybrid_2 = zeros(length(N))
 errors_svd = zeros(length(N))
 errors_schur= zeros(length(N))
 errors_hermitian = zeros(length(N))
-Ntrials = 2
+Ntrials = 5
 for (i, n) ∈ enumerate(N)
     for trial in 1:Ntrials
         if type == "good"
@@ -48,6 +48,7 @@ for (i, n) ∈ enumerate(N)
         errors_schur[i] +=  log2(norm(A * Q - Q * S)/ norm(A)) / Ntrials
         Q, Λ = hermitian_eigen(copy(A))
         errors_hermitian[i] +=  log2(norm(A * Q - Q * Λ)/ norm(A)) / Ntrials
+        println("Done with n = ", 2n, " trial ", trial)
     end
 end
 errors_hybrid_1 .= 2 .^errors_hybrid_1
@@ -57,7 +58,7 @@ errors_schur .= 2 .^errors_schur
 errors_hermitian .= 2 .^errors_hermitian
 
 P = plot(framestyle=:box, xscale=:log2, yscale=:log10, ticksfontfamily = "Computer Modern", fontfamily = "Computer Modern", legendfontfamily = "Computer Modern", titlefontfamily = "Computer Modern",
-legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, xticks = [16, 64, 256, 1024, 4096])
+legendfontsize = 12, labelfontsize = 15, tickfontsize = 12, legend=:topleft, xticks = 2N)
 #plot!(P, 2N, errors_svd, label="Algorithm 4.1 with PSVD", marker=:circle, linestyle=:solid, color=:blue)
 plot!(P, 2N, errors_hybrid_1, label="Algorithm 4.1 with QDWH (1 subspace it.)", marker=:pentagon, linestyle=:dash, color=:green)
 plot!(P, 2N, errors_hybrid_2, label="Algorithm 4.1 with QDWH (2 subspace it.)", marker=:square, linestyle=:dashdot, color=:purple)
